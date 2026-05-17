@@ -1,65 +1,157 @@
-import Image from "next/image";
+"use client";
 
-export default function Home() {
+import { useState, useRef } from "react";
+import { createClient } from "@/lib/supabase/client";
+
+type Step = "topic" | "email" | "sent";
+
+export default function LandingPage() {
+  const [step, setStep] = useState<Step>("topic");
+  const [topic, setTopic] = useState("");
+  const [email, setEmail] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState("");
+  const emailRef = useRef<HTMLInputElement>(null);
+
+  function handleTopicSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    const trimmed = topic.trim();
+    if (!trimmed) return;
+    localStorage.setItem("pomelo_pending_topic", trimmed);
+    setStep("email");
+    setTimeout(() => emailRef.current?.focus(), 50);
+  }
+
+  async function handleEmailSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setLoading(true);
+    setErrorMsg("");
+
+    const supabase = createClient();
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? window.location.origin;
+    const redirectTo = `${siteUrl}/auth/callback?topic=${encodeURIComponent(topic.trim())}`;
+
+    const { error } = await supabase.auth.signInWithOtp({
+      email: email.trim(),
+      options: { emailRedirectTo: redirectTo },
+    });
+
+    setLoading(false);
+
+    if (error) {
+      setErrorMsg("Something went wrong. Please try again.");
+      return;
+    }
+
+    setStep("sent");
+  }
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
+    <main className="flex min-h-screen flex-col items-center justify-center px-4">
+      <div className="w-full max-w-md">
+        <p className="text-center text-xs font-semibold tracking-widest text-amber-600 uppercase mb-10">
+          Pomelo
+        </p>
+
+        {step === "topic" && (
+          <form onSubmit={handleTopicSubmit} className="flex flex-col gap-4">
+            <h1 className="text-center text-4xl font-bold text-stone-900 leading-tight mb-2">
+              The course that skips what you already know.
+            </h1>
+            <p className="text-center text-stone-500 mb-2">
+              What do you want to learn?
+            </p>
+            <label htmlFor="topic" className="sr-only">
+              Topic
+            </label>
+            <input
+              id="topic"
+              type="text"
+              value={topic}
+              onChange={(e) => setTopic(e.target.value)}
+              placeholder="e.g., molecular biology, machine learning, financial modeling"
+              className="w-full rounded-lg border border-stone-200 bg-white px-4 py-3 text-stone-900 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-amber-500 text-base"
+              autoFocus
+              required
+              minLength={2}
+              maxLength={200}
             />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
+            <button
+              type="submit"
+              className="w-full rounded-lg bg-amber-600 px-4 py-3 text-white font-semibold hover:bg-amber-700 transition-colors disabled:opacity-50"
+              disabled={!topic.trim()}
+            >
+              Get started →
+            </button>
+          </form>
+        )}
+
+        {step === "email" && (
+          <form onSubmit={handleEmailSubmit} className="flex flex-col gap-4">
+            <button
+              type="button"
+              onClick={() => setStep("topic")}
+              className="text-sm text-stone-400 hover:text-stone-600 self-start mb-1"
+            >
+              ← Back
+            </button>
+            <div className="rounded-lg bg-amber-50 border border-amber-100 px-4 py-3">
+              <p className="text-sm text-stone-600">
+                <span className="font-medium text-stone-800">Your topic:</span>{" "}
+                {topic}
+              </p>
+            </div>
+            <p className="text-stone-700 font-medium">
+              Enter your email — we&apos;ll send you a sign-in link.
+            </p>
+            <p className="text-sm text-stone-400 -mt-2">
+              Your topic is saved. You&apos;ll start building your course right
+              after clicking the link.
+            </p>
+            <label htmlFor="email" className="sr-only">
+              Email address
+            </label>
+            <input
+              id="email"
+              ref={emailRef}
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="you@example.com"
+              className="w-full rounded-lg border border-stone-200 bg-white px-4 py-3 text-stone-900 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-amber-500 text-base"
+              required
+            />
+            {errorMsg && <p className="text-red-600 text-sm">{errorMsg}</p>}
+            <button
+              type="submit"
+              className="w-full rounded-lg bg-amber-600 px-4 py-3 text-white font-semibold hover:bg-amber-700 transition-colors disabled:opacity-50"
+              disabled={loading || !email.trim()}
+            >
+              {loading ? "Sending…" : "Send sign-in link →"}
+            </button>
+          </form>
+        )}
+
+        {step === "sent" && (
+          <div className="text-center">
+            <div className="text-4xl mb-4" aria-hidden>
+              📬
+            </div>
+            <h2 className="text-2xl font-semibold text-stone-900 mb-2">
+              Check your inbox
+            </h2>
+            <p className="text-stone-500 leading-relaxed">
+              We sent a sign-in link to{" "}
+              <span className="font-medium text-stone-700">{email}</span>. Click
+              it to start building your personalized{" "}
+              <span className="font-medium text-stone-700">{topic}</span> course.
+            </p>
+            <p className="mt-4 text-sm text-stone-400">
+              Didn&apos;t get it? Check your spam folder.
+            </p>
+          </div>
+        )}
+      </div>
+    </main>
   );
 }
