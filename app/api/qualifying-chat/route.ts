@@ -78,13 +78,21 @@ export async function POST(req: NextRequest) {
   const messages: { role: "user" | "assistant"; content: string }[] =
     updatedTurns.map((t) => ({ role: t.role, content: t.content }));
 
+  // After enough turns, force the model to call a tool (can't output plain text)
+  const userTurnCount = updatedTurns.filter((t) => t.role === "user").length;
+  const toolChoice =
+    userTurnCount >= 6
+      ? ({ type: "any" } as const)
+      : ({ type: "auto" } as const);
+
   let claudeResponse;
   try {
     claudeResponse = await anthropic.messages.create({
       model: QUALIFYING_MODEL,
-      max_tokens: 1024,
+      max_tokens: 4096,
       system: `${QUALIFYING_SYSTEM_PROMPT}\n\nThe learner's topic is: "${session.topic}"`,
       tools: [FINISH_QUALIFYING_TOOL],
+      tool_choice: toolChoice,
       messages,
     });
   } catch (err) {

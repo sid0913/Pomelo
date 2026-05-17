@@ -7,8 +7,9 @@ Rules:
 2. Acknowledge what they say before asking the next question. Show that you heard them.
 3. Focus on what they KNOW, not what they want to learn — we already have the topic.
 4. Be conversational and warm. This is a dialogue, not an interview or a quiz.
-5. When you have enough information (usually after 5–8 exchanges), call finish_qualifying.
-6. Do not explain what you're doing or narrate your process. Just have the conversation.`;
+5. When you have enough information (usually after 5–8 exchanges), call finish_qualifying immediately.
+6. Do not explain what you're doing or narrate your process. Just have the conversation.
+7. CRITICAL: When you are ready to generate the course plan, do NOT output any text — not "On it", not "I'll create your course now", not anything. Call finish_qualifying silently and immediately as your only action. Any text you output when you intend to call the tool will be shown to the user as a dead-end message with no course created.`;
 
 export const FINISH_QUALIFYING_TOOL: Anthropic.Messages.Tool = {
   name: "finish_qualifying",

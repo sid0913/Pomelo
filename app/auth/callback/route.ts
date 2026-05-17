@@ -18,7 +18,6 @@ export async function GET(req: NextRequest) {
     return NextResponse.redirect(`${origin}/?error=auth_failed`);
   }
 
-  // Redirect to qualifying chat — topic is re-read from localStorage client-side
   const redirectUrl = topic
     ? `${origin}/courses/new?topic=${encodeURIComponent(topic)}`
     : `${origin}/courses/new`;
