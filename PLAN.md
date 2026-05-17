@@ -284,6 +284,158 @@ Merge conflicts possible if C1/C2/C3 all touch `lib/claude.ts` simultaneously �
 
 ---
 
+## UI Design Spec
+
+**No DESIGN.md** — design system specified inline. Sufficient for v1.
+
+### Design System (Minimal v1)
+
+**Typography:** Plus Jakarta Sans (variable weight, Google Fonts) — not Inter, not system-ui.
+- Scale: 40px display / 24px h2 / 18px h3 / 16px body / 14px small
+- Body line-height: 1.75
+
+**Color system — define in `app/globals.css`:**
+```css
+--color-background: #fafaf9;     /* warm off-white */
+--color-surface:    #ffffff;
+--color-text-primary:   #1c1917; /* stone-900 */
+--color-text-secondary: #78716c; /* stone-500 */
+--color-accent:       #d97706;   /* amber-600 */
+--color-accent-hover: #b45309;   /* amber-700 */
+--color-border:     #e7e5e4;     /* stone-200 */
+--color-error:      #dc2626;
+--color-success:    #16a34a;
+```
+
+**Spacing:** 4 / 8 / 12 / 16 / 24 / 32 / 48 / 64 / 96px
+
+**Border radius:** 4px (small), 8px (medium), 12px (large) — restrained, not bubbly
+
+**AI Slop avoidance rules (Pomelo-specific):**
+- No card grid for chapter list → dense numbered list
+- No purple/blue/violet color scheme → amber accent only
+- No icons-in-colored-circles as decoration
+- No centered-everything layout (center only the landing headline + input)
+- No decorative blobs, wavy SVG dividers, floating shapes
+- No emoji as design elements
+- Chapter row: full-width clickable row, NOT a card with border-radius + shadow
+
+---
+
+### Screen Hierarchy Specs
+
+#### Landing (`/`) — Topic-first entry
+**Classified: HYBRID** (landing message + auth action on one screen)
+
+Hierarchy:
+1. **Headline**: "The course that skips what you already know." — 40px, warm-stone, centered
+2. **Topic input**: "What do you want to learn?" — max-width 480px centered, large placeholder `e.g., molecular biology, machine learning, financial modeling`
+3. **Submit** → email overlay: "Enter your email to receive a sign-in link. Your topic is saved." + email input + send button
+4. Below fold (optional): 2-sentence product explanation — not feature bullets, not testimonials
+
+**Implementation note (D2 decision):** store topic in `localStorage['pomelo_pending_topic']` before magic link send; restore at `/courses/new` after auth; clear after qualifying session is created.
+
+#### Qualifying Chat (`/courses/new`)
+**Classified: APP UI**
+
+Hierarchy:
+1. **Topic banner**: "[topic]" — 14px, stone-500, top-left
+2. **Progress context**: "Building your knowledge profile — 3 of ~7 questions" — below/beside topic banner, subtle
+3. **Chat area**: scrollable, max-width 640px centered. AI messages left-aligned (white card on `#fafaf9` bg). User messages right-aligned (`#fefce8` amber-50 bg).
+4. **Bottom bar (fixed)**: text input + Send button, full-width on mobile, 44px min touch target
+5. **Completion overlay**: full-page "Creating your personalized course..." + centered spinner. No progress bar.
+
+#### Course Dashboard (`/courses/[id]`)
+**Classified: APP UI**
+
+Hierarchy:
+1. **Course header**: topic (h1). Below: "{N} chapters · ~{total_time} min" in stone-500
+2. **Habit row**: "Today's goal: {N} chapter. {X} of {N} completed." — single line, no card/widget
+3. **Chapter list** (numbered, dense): each row = index + title + estimated_minutes + status badge. Full-row tap target. No chapter cards.
+
+**First-time reveal (new course only):** chapters stagger in with 40ms delay per item. "Your personalized course is ready" header text fades out after 3s. Respect `prefers-reduced-motion` — skip animation if set.
+
+Chapter item states:
+| Status | Badge |
+|--------|-------|
+| `pending` | amber "Open →" text |
+| `generating` | inline spinner |
+| `done` | green checkmark + title clickable |
+| `failed` | red "Retry" text |
+
+Empty state (all chapters pending at creation): "Open any chapter to start. It will generate in about 30 seconds."
+
+#### Chapter View (`/courses/[id]/chapters/[cId]`)
+**Classified: APP UI**
+
+Hierarchy:
+1. **Breadcrumb**: "[Topic] → Chapter {N}" — 14px, stone-500, top-left, links back to dashboard
+2. **Chapter title**: h1, stone-900
+3. **Read time**: "{N} min read" — 14px, stone-500, below title
+4. **Content area**: prose, max-width 680px, 18px body, 1.75 line-height
+5. **Streaming indicator**: pulsing `|` cursor at end of streaming text (CSS keyframes `blink 1.2s step-end infinite`). Disappears on stream complete.
+6. **Bottom (on complete)**: "Next chapter →" amber button. Last chapter: "You've completed this course." + link to dashboard.
+
+Generation states:
+- `pending`/`generating` first 8s: centered spinner + "Generating your chapter..."
+- `generating` after 8s: "This is taking a while — still working on it."
+- `failed`: "Couldn't generate this chapter." + "Try again" outline button (centered)
+
+---
+
+### Interaction State Table
+
+| Feature | Loading | Empty | Error | Success | Partial |
+|---------|---------|-------|-------|---------|---------|
+| Topic input (landing) | N/A | Placeholder shown | "Please enter a topic" below input | → email overlay | N/A |
+| Qualifying chat turn | 3-dot typing indicator (600ms animation) | First AI message auto-appears | "Something went wrong. Refresh to retry." inline | → course generation overlay | N/A |
+| Course generation | Full-page: spinner + "Creating your personalized course..." | N/A | "Course creation failed." + retry button | Redirect → dashboard with reveal animation | N/A |
+| Course dashboard load | Skeleton shimmer (3 rows) | N/A | N/A | Chapter list renders | Some done, some pending |
+| Chapter generation | Centered spinner + "Generating..." → "Still working..." at 8s | N/A | "Couldn't generate." + retry | Streaming text starts | Partial text + pulsing cursor |
+| Chapter scroll-complete | N/A | N/A | Stream interrupt: retain partial + "Generation interrupted. Retry." | "Next chapter →" CTA appears; `completed_at` set | N/A |
+
+---
+
+### User Journey Storyboard
+
+| Step | User does | User feels | Plan specifies |
+|------|-----------|------------|----------------|
+| 1. Landing | Types "molecular biology" | Curious, hopeful | Topic input IS the hero — no image, no hero section |
+| 2. Email | Enters email, clicks Send | Slight friction | "Your topic is saved." label under email reassures |
+| 3. Magic link | Clicks link in email | Anticipation | Redirects to qualifying chat with topic pre-filled |
+| 4. Qualifying chat | Answers 5–10 AI questions | Validated — AI knows the domain | AI references specific domain, not generic "biology student" |
+| 5. Course generation | Waits on loading screen | Anticipation | "Creating your personalized course..." — no ETA |
+| 6. **First dashboard** | Sees chapters stagger in | **Payoff**: "it knows what I need" | Reveal animation + "Your personalized course is ready" fades out after 3s |
+| 7. First chapter | Clicks → watches stream | Fascination (AI writing live for me) | Streaming text + pulsing cursor |
+| 8. Scroll to bottom | Reaches end | "I learned something" | "Next chapter →" CTA appears; `completed_at` set by IntersectionObserver |
+| 9. Day 2, 8pm | Hasn't read today | Mild guilt | Email: "You're 1 chapter behind on [topic]" |
+| 10. Day 2 return | Clicks email → chapter | Re-engaged | Opens chapter directly, seamless return |
+
+---
+
+### Responsive Spec
+
+| Screen | Desktop (>768px) | Mobile (<640px) |
+|--------|-----------------|-----------------|
+| Landing | max-width 480px topic input, centered | full-width input |
+| Qualifying chat | max-width 640px chat area, centered | full-width; bottom bar full-width |
+| Dashboard | max-width 768px chapter list | full-width list; row min-height 56px |
+| Chapter view | max-width 680px prose | full-width prose; breadcrumb shows chapter title only on <375px |
+
+All interactive elements: ≥44px touch target height.
+
+### Accessibility (a11y)
+
+- **Keyboard navigation**: all interactive elements (inputs, Send, chapter rows, retry, next chapter) reachable by Tab
+- **Focus management**: after magic link auth → `autoFocus` on qualifying chat text input; after chapter loads → focus chapter title
+- **ARIA live region**: chapter content container has `aria-live="polite"` — screen readers announce streaming additions
+- **ARIA status**: qualifying progress has `role="status"` with "Building your knowledge profile, step 3 of approximately 7"
+- **Color contrast**: body (#1c1917 on #fafaf9) ≈ 17.7:1 ✓; amber accent used ONLY for badges/CTAs, never for body text
+- **Touch targets**: all tappable elements ≥44px
+- **Form labels**: topic input and chat input have visible `<label>` elements — not placeholder-as-label
+
+---
+
 ## NOT in Scope
 
 - Per-chapter quiz — v1.5
@@ -294,6 +446,10 @@ Merge conflicts possible if C1/C2/C3 all touch `lib/claude.ts` simultaneously �
 - YouTube transcript integration — v2
 - Streak mechanics — v2
 - Native mobile app — v3
+- DESIGN.md — design system is inline above; formalize with `/design-consultation` before v2
+- Dark mode — single warm light theme for v1
+- Page transition animations — stagger reveal and cursor pulse only
+- `prefers-reduced-motion` exemption: reveal animation and cursor pulse must be disabled when set
 
 ## What Already Exists
 
@@ -355,13 +511,38 @@ Synthesized from review findings. Each task derives from a specific finding.
   - Files: `app/api/courses/route.ts`
   - Verify: POST with timezone='garbage' → 400 error; 'America/New_York' → 200
 
+- [ ] **T10 (P1, human: ~2h / CC: ~20min)** — Landing — Implement topic-first entry: topic input on `/`, localStorage persistence through magic link redirect, topic restore at `/courses/new`
+  - Surfaced by: Design Review D2 — email-first landing is a conversion bottleneck; topic input IS the product demo
+  - Files: `app/page.tsx`, `app/(auth)/login/page.tsx`, `app/(app)/courses/new/page.tsx`
+  - Verify: enter topic on `/` → submit email → click magic link → arrive at `/courses/new` with topic pre-filled and `localStorage['pomelo_pending_topic']` cleared
+
+- [ ] **T11 (P2, human: ~1h / CC: ~10min)** — Design System — Add Plus Jakarta Sans font (Google Fonts), CSS custom properties for color system, spacing scale in `tailwind.config.ts`
+  - Surfaced by: Design Review Pass 5 — no design system; inline spec above defines tokens
+  - Files: `app/layout.tsx`, `app/globals.css`, `tailwind.config.ts`
+  - Verify: `--color-accent` resolves to `#d97706` in browser; body text renders in Plus Jakarta Sans (not system-ui)
+
+- [ ] **T12 (P2, human: ~1h / CC: ~10min)** — Course dashboard — Implement first-time reveal animation (chapter stagger + "Your personalized course is ready" 3s fade); respect `prefers-reduced-motion`
+  - Surfaced by: Design Review D4 — flat landing on dashboard makes personalization invisible
+  - Files: `app/(app)/courses/[id]/page.tsx`
+  - Verify: new course → chapters animate in with 40ms stagger → header text fades at 3s; with `prefers-reduced-motion: reduce` → no animation, list appears immediately
+
+- [ ] **T13 (P2, human: ~1h / CC: ~10min)** — Chapter view — Implement scroll-to-bottom auto-complete (IntersectionObserver sentinel → PATCH `/api/chapters/[id]/progress`)
+  - Surfaced by: Design Review D3 — `completed_at` has no setter in the current plan
+  - Files: `app/(app)/courses/[id]/chapters/[cId]/page.tsx`, `app/api/chapters/[id]/progress/route.ts`
+  - Verify: scroll to bottom of a done chapter → `completed_at` set in DB → chapter shows green checkmark on dashboard → habit daily goal count increments
+
+- [ ] **T14 (P2, human: ~30min / CC: ~5min)** — Chapter view — Add streaming cursor (pulsing `|` CSS animation at end of streaming text); add `aria-live="polite"` on content container
+  - Surfaced by: Design Review Pass 2 + Pass 6 — streaming state has no visual indicator; streaming content is invisible to screen readers
+  - Files: `app/(app)/courses/[id]/chapters/[cId]/page.tsx`, `app/globals.css`
+  - Verify: chapter streaming → pulsing cursor appears at text end; cursor disappears on stream complete; screen reader announces content additions
+
 ---
 
 ## Recommended Build Order
 
-1. **Week 1:** T1 (schema) + Next.js scaffold + auth pages
+1. **Week 1:** T1 (schema) + T11 (design system) + Next.js scaffold + auth pages + T10 (topic-first landing)
 2. **Week 1–2:** T4 (qualifying chat) + T2+T3 (chapter generation, in parallel)
-3. **Week 2:** T5 (retry) + T6 (habit mechanic) + T9 (timezone validation)
+3. **Week 2:** T12 (reveal animation) + T13 (scroll-complete) + T14 (streaming cursor + a11y) + T5 (retry) + T6 (habit mechanic) + T9 (timezone validation)
 4. **Week 2:** T7+T8 (tests, run alongside feature work)
 5. **Week 2:** Dashboard, chapter progress, end-to-end integration
 
@@ -374,9 +555,10 @@ Synthesized from review findings. Each task derives from a specific finding.
 | CEO Review | `/plan-ceo-review` | Scope & strategy | 0 | — | — |
 | Codex Review | `/codex review` | Independent 2nd opinion | 1 | issues_found | 5 findings (2 accepted, 1 rejected, 1 accepted, 1 accepted) |
 | Eng Review | `/plan-eng-review` | Architecture & tests (required) | 1 | CLEAR | 10 decisions, 9 tasks, 3 critical gaps |
-| Design Review | `/plan-design-review` | UI/UX gaps | 0 | — | — |
+| Design Review | `/plan-design-review` | UI/UX gaps | 1 | CLEAR | 4 decisions, 5 design tasks (T10–T14), full UI spec added |
 | DX Review | `/plan-devex-review` | Developer experience gaps | 0 | — | — |
 
 **CROSS-MODEL:** Outside voice agreed on concurrent generation fix, chapter retry. Disputed qualifying_sessions (user kept Supabase) and habit cron (user accepted switch to Vercel Cron).
+**DESIGN DECISIONS (D2–D4):** Topic-first landing (D2), scroll-to-bottom chapter completion (D3), subtle reveal animation on first course view (D4).
 **UNRESOLVED:** 0
-**VERDICT:** ENG CLEARED — ready to implement. Consider /plan-design-review before building course dashboard and chapter view UI.
+**VERDICT:** ENG CLEARED + DESIGN CLEARED — ready to implement. Build order: T1+T11 (schema + design system) → T10 (landing) → T4+T2+T3 (qualifying + chapters) → T12–T14 (UI polish) → T5+T6 (habit).
