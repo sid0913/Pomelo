@@ -6,6 +6,17 @@ import { useRouter, useSearchParams } from "next/navigation";
 type Message = { role: "user" | "assistant"; content: string };
 type Status = "idle" | "loading" | "creating";
 
+const LOADING_VERBS = [
+  "thinking...",
+  "exploring...",
+  "course-ing...",
+  "calibrating...",
+  "mapping gaps...",
+  "connecting ideas...",
+  "charting your path...",
+  "profiling...",
+];
+
 export default function NewCoursePage() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -18,6 +29,7 @@ export default function NewCoursePage() {
   const [status, setStatus] = useState<Status>("idle");
   const [error, setError] = useState<string | null>(null);
   const [turnCount, setTurnCount] = useState(0);
+  const [verbIndex, setVerbIndex] = useState(0);
 
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -41,6 +53,15 @@ export default function NewCoursePage() {
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, status]);
+
+  useEffect(() => {
+    if (status !== "loading") return;
+    const interval = setInterval(
+      () => setVerbIndex((i) => (i + 1) % LOADING_VERBS.length),
+      2000
+    );
+    return () => clearInterval(interval);
+  }, [status]);
 
   async function sendMessage(
     userText: string,
@@ -164,10 +185,10 @@ export default function NewCoursePage() {
 
           {status === "loading" && (
             <div className="flex justify-start">
-              <div className="bg-white border border-stone-200 rounded-xl px-4 py-3 flex gap-1 items-center">
-                <span className="typing-dot w-1.5 h-1.5 rounded-full bg-stone-400" />
-                <span className="typing-dot w-1.5 h-1.5 rounded-full bg-stone-400" />
-                <span className="typing-dot w-1.5 h-1.5 rounded-full bg-stone-400" />
+              <div className="bg-white border border-stone-200 rounded-xl px-4 py-3">
+                <span key={verbIndex} className="verb-shimmer">
+                  {LOADING_VERBS[verbIndex]}
+                </span>
               </div>
             </div>
           )}
