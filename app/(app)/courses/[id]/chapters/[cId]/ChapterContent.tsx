@@ -5,6 +5,19 @@ import Link from "next/link";
 
 type Status = "pending" | "generating" | "done" | "failed";
 
+type VideoResult = {
+  id: string;
+  title: string;
+  channelTitle: string;
+  thumbnailUrl: string;
+};
+
+type Source = {
+  title: string;
+  type: "article" | "video" | "book" | "docs" | "other";
+  description: string;
+};
+
 type Props = {
   chapterId: string;
   courseId: string;
@@ -16,6 +29,14 @@ type Props = {
 
 const POLL_INTERVAL_MS = 2000;
 const STILL_WORKING_MS = 8000;
+
+const SOURCE_ICONS: Record<Source["type"], string> = {
+  article: "📄",
+  video: "▶",
+  book: "📖",
+  docs: "📚",
+  other: "🔗",
+};
 
 export function ChapterContent({
   chapterId,
@@ -33,9 +54,14 @@ export function ChapterContent({
   const [completed, setCompleted] = useState(false);
   const [retrying, setRetrying] = useState(false);
 
+  const [videos, setVideos] = useState<VideoResult[]>([]);
+  const [sources, setSources] = useState<Source[]>([]);
+  const [enriching, setEnriching] = useState(false);
+
   const sentinelRef = useRef<HTMLDivElement>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const stillWorkingTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const enrichedRef = useRef(false);
 
   // Mark chapter complete when user scrolls to sentinel
   useEffect(() => {
@@ -56,12 +82,28 @@ export function ChapterContent({
     return () => observer.disconnect();
   }, [chapterId, status, completed]);
 
+  // Trigger enrichment once content is done
+  useEffect(() => {
+    if (status !== "done" || enrichedRef.current) return;
+    enrichedRef.current = true;
+    setEnriching(true);
+    fetch(`/api/chapters/${chapterId}/enrichment`, { method: "POST" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (data?.ready) {
+          setVideos(data.videos ?? []);
+          setSources(data.sources ?? []);
+        }
+      })
+      .catch(() => {})
+      .finally(() => setEnriching(false));
+  }, [chapterId, status]);
+
   const startGeneration = useCallback(async () => {
     setIsStreaming(true);
     setStatus("generating");
     setContent("");
 
-    // Start still-working timer
     stillWorkingTimer.current = setTimeout(
       () => setStillWorking(true),
       STILL_WORKING_MS
@@ -70,14 +112,11 @@ export function ChapterContent({
     try {
       const res = await fetch(`/api/chapters/${chapterId}`, { cache: "no-store" });
 
-      if (!res.ok) {
-        throw new Error(`HTTP ${res.status}`);
-      }
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
       const contentType = res.headers.get("content-type") ?? "";
 
       if (contentType.includes("text/plain")) {
-        // Streaming response
         const reader = res.body?.getReader();
         const decoder = new TextDecoder();
         if (!reader) throw new Error("No response body");
@@ -99,7 +138,6 @@ export function ChapterContent({
         setStatus("done");
         setIsStreaming(false);
       } else {
-        // JSON response
         const data = await res.json();
 
         if (data.status === "done") {
@@ -107,7 +145,6 @@ export function ChapterContent({
           setStatus("done");
           setIsStreaming(false);
         } else if (data.status === "generating") {
-          // Another request is generating — poll
           setIsStreaming(false);
           pollRef.current = setInterval(pollStatus, POLL_INTERVAL_MS);
         } else if (data.status === "failed") {
@@ -164,7 +201,6 @@ export function ChapterContent({
     }
   }
 
-  // Trigger generation on mount if not already done
   useEffect(() => {
     if (initialStatus === "done" && initialContent) return;
     void startGeneration();
@@ -176,7 +212,6 @@ export function ChapterContent({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // ── Render ────────────────────────────────────────────────────
   if (status === "failed" && !content) {
     return (
       <div className="text-center py-16">
@@ -222,8 +257,73 @@ export function ChapterContent({
         ))}
       </article>
 
-      {/* Scroll sentinel for auto-complete */}
+      {/* Scroll sentinel */}
       <div ref={sentinelRef} className="h-px" aria-hidden />
+
+      {/* Enrichment: Videos */}
+      {status === "done" && (enriching || videos.length > 0) && (
+        <section className="mt-10">
+          <h2 className="text-sm font-semibold text-stone-500 uppercase tracking-wide mb-4">
+            Videos
+          </h2>
+          {enriching && videos.length === 0 ? (
+            <div className="flex items-center gap-2 text-stone-400 text-sm">
+              <div className="w-4 h-4 rounded-full border border-stone-200 border-t-amber-600 animate-spin shrink-0" />
+              Finding videos…
+            </div>
+          ) : (
+            <div className="flex flex-col gap-4">
+              {videos.map((v) => (
+                <div key={v.id} className="rounded-xl overflow-hidden border border-stone-200">
+                  <div className="relative" style={{ paddingBottom: "56.25%" }}>
+                    <iframe
+                      src={`https://www.youtube.com/embed/${v.id}`}
+                      title={v.title}
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                      className="absolute inset-0 w-full h-full"
+                      loading="lazy"
+                    />
+                  </div>
+                  <div className="px-3 py-2">
+                    <p className="text-sm font-medium text-stone-800 leading-snug">{v.title}</p>
+                    <p className="text-xs text-stone-400 mt-0.5">{v.channelTitle}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+      )}
+
+      {/* Enrichment: Sources */}
+      {status === "done" && (enriching || sources.length > 0) && (
+        <section className="mt-8">
+          <h2 className="text-sm font-semibold text-stone-500 uppercase tracking-wide mb-4">
+            Further reading
+          </h2>
+          {enriching && sources.length === 0 ? (
+            <div className="flex items-center gap-2 text-stone-400 text-sm">
+              <div className="w-4 h-4 rounded-full border border-stone-200 border-t-amber-600 animate-spin shrink-0" />
+              Curating sources…
+            </div>
+          ) : (
+            <div className="flex flex-col gap-3">
+              {sources.map((s, i) => (
+                <div key={i} className="flex gap-3 py-3 border-b border-stone-100 last:border-0">
+                  <span className="shrink-0 text-base" aria-label={s.type}>
+                    {SOURCE_ICONS[s.type]}
+                  </span>
+                  <div>
+                    <p className="text-sm font-medium text-stone-800">{s.title}</p>
+                    <p className="text-xs text-stone-500 mt-0.5 leading-relaxed">{s.description}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+      )}
 
       {/* Post-completion CTA */}
       {status === "done" && (

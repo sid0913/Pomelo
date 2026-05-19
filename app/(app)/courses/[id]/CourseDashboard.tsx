@@ -23,6 +23,7 @@ type Props = {
   chapters: Chapter[];
   completedIds: Set<string>;
   completedToday: number;
+  streak: number;
   isNew: boolean;
 };
 
@@ -31,6 +32,7 @@ export function CourseDashboard({
   chapters,
   completedIds,
   completedToday,
+  streak,
   isNew,
 }: Props) {
   const [headerVisible, setHeaderVisible] = useState(isNew);
@@ -62,13 +64,20 @@ export function CourseDashboard({
           {chapters.length} chapters · ~{course.totalMinutes} min total
         </p>
 
-        {/* Habit row */}
-        <div className="mb-8 text-sm text-stone-600">
-          Today&apos;s goal:{" "}
-          <span className="font-medium text-stone-800">
-            {completedToday} of {course.daily_goal} chapter
-            {course.daily_goal !== 1 ? "s" : ""} completed
+        {/* Habit + streak row */}
+        <div className="mb-8 flex items-center justify-between text-sm text-stone-600">
+          <span>
+            Today&apos;s goal:{" "}
+            <span className="font-medium text-stone-800">
+              {completedToday} of {course.daily_goal} chapter
+              {course.daily_goal !== 1 ? "s" : ""} completed
+            </span>
           </span>
+          {streak > 0 && (
+            <span className="flex items-center gap-1 font-semibold text-amber-600">
+              🔥 {streak} day{streak !== 1 ? "s" : ""} streak
+            </span>
+          )}
         </div>
 
         {/* Chapter list */}
@@ -92,12 +101,10 @@ export function CourseDashboard({
                 }`}
                 style={isNew ? { animationDelay: delay } : {}}
               >
-                {/* Index */}
                 <span className="text-sm font-medium text-stone-400 w-6 shrink-0">
                   {chapter.chapter_index + 1}
                 </span>
 
-                {/* Title + meta */}
                 <div className="flex-1 min-w-0">
                   <p
                     className={`text-base font-medium leading-snug truncate ${
@@ -111,7 +118,6 @@ export function CourseDashboard({
                   </p>
                 </div>
 
-                {/* Status badge */}
                 <span className="shrink-0">
                   {isDone ? (
                     <span className="text-green-600 text-sm">✓</span>
