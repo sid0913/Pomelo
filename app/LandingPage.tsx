@@ -54,7 +54,7 @@ export function LandingPage() {
         </p>
 
         {step === "topic" && (
-          <form onSubmit={handleTopicSubmit} className="flex flex-col gap-4">
+          <form onSubmit={handleTopicSubmit} className="step-fade-enter flex flex-col gap-4">
             <h1 className="text-center text-4xl font-bold text-stone-900 leading-tight mb-2">
               The course that skips what you already know.
             </h1>
@@ -87,7 +87,7 @@ export function LandingPage() {
         )}
 
         {step === "email" && (
-          <form onSubmit={handleEmailSubmit} className="flex flex-col gap-4">
+          <form onSubmit={handleEmailSubmit} className="step-fade-enter flex flex-col gap-4">
             <button
               type="button"
               onClick={() => setStep("topic")}
@@ -133,10 +133,7 @@ export function LandingPage() {
         )}
 
         {step === "sent" && (
-          <div className="text-center">
-            <div className="text-4xl mb-4" aria-hidden>
-              📬
-            </div>
+          <div className="step-fade-enter text-center">
             <h2 className="text-2xl font-semibold text-stone-900 mb-2">
               Check your inbox
             </h2>

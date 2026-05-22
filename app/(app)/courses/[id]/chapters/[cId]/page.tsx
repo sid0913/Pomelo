@@ -3,6 +3,7 @@ import Link from "next/link";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { ChapterContent } from "./ChapterContent";
 import { ChapterChat } from "./ChapterChat";
+import { toTitleCase } from "@/lib/format";
 
 type Props = { params: Promise<{ id: string; cId: string }> };
 
@@ -53,7 +54,7 @@ export default async function ChapterPage({ params }: Props) {
             href={`/courses/${courseId}`}
             className="hover:text-stone-600 transition-colors truncate max-w-[140px]"
           >
-            {course.topic}
+            {toTitleCase(course.topic)}
           </Link>
           <span className="shrink-0">→</span>
           <span className="text-stone-600 font-medium truncate">
