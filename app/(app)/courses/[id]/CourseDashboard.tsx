@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { toTitleCase } from "@/lib/format";
 
 type Chapter = {
   id: string;
@@ -46,6 +47,14 @@ export function CourseDashboard({
   return (
     <div className="min-h-screen bg-stone-50">
       <div className="max-w-2xl mx-auto px-4 py-10">
+        {/* Back link */}
+        <Link
+          href="/courses"
+          className="inline-block text-sm text-stone-400 hover:text-stone-700 transition-colors mb-6"
+        >
+          ← My courses
+        </Link>
+
         {/* Reveal header */}
         {headerVisible && (
           <div
@@ -59,7 +68,7 @@ export function CourseDashboard({
         )}
 
         {/* Course header */}
-        <h1 className="text-3xl font-bold text-stone-900 mb-1">{course.topic}</h1>
+        <h1 className="text-3xl font-bold text-stone-900 mb-1">{toTitleCase(course.topic)}</h1>
         <p className="text-sm text-stone-500 mb-6">
           {chapters.length} chapters · ~{course.totalMinutes} min total
         </p>

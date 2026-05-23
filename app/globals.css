@@ -71,9 +71,42 @@
   animation: shimmer 1.4s ease-in-out infinite;
 }
 
+/* Qualifying wizard transitions */
+@keyframes questionFadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes questionFadeOut {
+  from { opacity: 1; transform: translateY(0); }
+  to   { opacity: 0; transform: translateY(-8px); }
+}
+@keyframes optionStagger {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.question-enter {
+  animation: questionFadeIn 200ms ease-in both;
+}
+.question-exit {
+  animation: questionFadeOut 150ms ease-out both;
+}
+.option-enter {
+  animation: optionStagger 180ms ease-out both;
+}
+
+/* Landing step transitions */
+.step-fade-enter {
+  animation: questionFadeIn 150ms ease-in both;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .chapter-reveal          { animation: none; }
   .streaming-cursor::after { animation: none; }
   .skeleton                { animation: none; }
   .verb-shimmer            { animation: none; -webkit-text-fill-color: #78716c; }
+  .question-enter          { animation: none; }
+  .question-exit           { animation: none; }
+  .option-enter            { animation: none; }
+  .step-fade-enter         { animation: none; }
 }

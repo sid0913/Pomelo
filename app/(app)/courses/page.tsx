@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { NewCourseForm } from "./NewCourseForm";
+import { toTitleCase } from "@/lib/format";
 
 export default async function CoursesPage() {
   const supabase = await createClient();
@@ -94,7 +95,7 @@ export default async function CoursesPage() {
                 >
                   <div className="flex-1 min-w-0">
                     <p className="text-base font-medium text-stone-900 truncate group-hover:text-amber-700 transition-colors">
-                      {course.topic}
+                      {toTitleCase(course.topic)}
                     </p>
                     <p className="text-xs text-stone-400 mt-0.5">
                       {completed}/{total} chapters complete

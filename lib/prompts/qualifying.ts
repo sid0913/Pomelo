@@ -1,20 +1,44 @@
 import type Anthropic from "@anthropic-ai/sdk";
 
-export const QUALIFYING_SYSTEM_PROMPT = `You are a learning specialist helping a professional build a personalized course. Your job is to accurately map what they already know (so we can skip it) and what they genuinely need to learn.
+export const QUALIFYING_SYSTEM_PROMPT = `You are a learning specialist helping a professional build a personalized course. Your job is accurately map what they already know (so we can skip it) and what they genuinely need to learn.
 
 Rules:
-1. Ask ONE question at a time. Never list multiple questions in one message.
-2. Acknowledge what they say before asking the next question. Show that you heard them.
+1. Ask ONE question at a time by calling present_question. Never output plain text.
+2. Never acknowledge, never say "Great!" or "Thanks" or anything before the question. The question IS the output.
 3. Focus on what they KNOW, not what they want to learn — we already have the topic.
-4. Be conversational and warm. This is a dialogue, not an interview or a quiz.
-5. When you have enough information (usually after 5–8 exchanges), call finish_qualifying immediately.
-6. Do not explain what you're doing or narrate your process. Just have the conversation.
-7. CRITICAL: When you are ready to generate the course plan, do NOT output any text — not "On it", not "I'll create your course now", not anything. Call finish_qualifying silently and immediately as your only action. Any text you output when you intend to call the tool will be shown to the user as a dead-end message with no course created.`;
+4. Each question should be specific and concrete. Options must be mutually exclusive and cover the realistic range.
+5. After the learner answers exactly 5 questions, call finish_qualifying immediately with no text output.
+6. CRITICAL: Never output plain text at any point. Every response must be either a present_question call or a finish_qualifying call. Any plain text you output will appear as a broken UI state.`;
+
+export const PRESENT_QUESTION_TOOL: Anthropic.Messages.Tool = {
+  name: "present_question",
+  description:
+    "Present a single qualifying question with answer options to the learner. Call this for every question — never output plain text.",
+  input_schema: {
+    type: "object" as const,
+    properties: {
+      question: {
+        type: "string",
+        description:
+          "The question text. Plain, direct, no preamble. E.g. 'What best describes your background with machine learning?'",
+      },
+      options: {
+        type: "array",
+        description:
+          "2–4 answer options. Concrete, mutually exclusive, cover the realistic range.",
+        minItems: 2,
+        maxItems: 4,
+        items: { type: "string" },
+      },
+    },
+    required: ["question", "options"],
+  },
+};
 
 export const FINISH_QUALIFYING_TOOL: Anthropic.Messages.Tool = {
   name: "finish_qualifying",
   description:
-    "Call this when you have gathered enough information to design a personalized chapter plan. Include all chapters needed to fill the learner's specific gaps, ordered logically.",
+    "Call this when you have gathered enough information (after exactly 5 user answers) to design a personalized chapter plan. Include all chapters needed to fill the learner's specific gaps, ordered logically.",
   input_schema: {
     type: "object" as const,
     properties: {
@@ -63,6 +87,12 @@ export const FINISH_QUALIFYING_TOOL: Anthropic.Messages.Tool = {
             type: "string",
             enum: ["beginner", "intermediate", "advanced"],
             description: "Overall experience level with the topic area",
+          },
+          custom_topics: {
+            type: "array",
+            items: { type: "string" },
+            description:
+              "Specific subtopics the learner explicitly requested to be covered",
           },
         },
         required: ["known_topics", "gap_topics", "experience_level"],
