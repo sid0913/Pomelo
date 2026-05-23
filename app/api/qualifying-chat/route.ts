@@ -187,13 +187,6 @@ export async function POST(req: NextRequest) {
       status: "pending",
     }));
 
-    await serviceClient.from("chapters").insert(chapterRows);
-
-    await serviceClient
-      .from("qualifying_sessions")
-      .update({ status: "complete", updated_at: new Date().toISOString() })
-      .eq("id", session.id);
-
     const timezone =
       req.headers.get("x-timezone") ??
       Intl.DateTimeFormat().resolvedOptions().timeZone;
@@ -207,13 +200,20 @@ export async function POST(req: NextRequest) {
       // invalid timezone — fall back to UTC
     }
 
-    await serviceClient.from("habit_reminders").insert({
-      user_id: user.id,
-      course_id: course.id,
-      timezone: validTimezone,
-      utc_offset_hours: Math.round(utcOffsetHours),
-      is_active: true,
-    });
+    await Promise.all([
+      serviceClient.from("chapters").insert(chapterRows),
+      serviceClient
+        .from("qualifying_sessions")
+        .update({ status: "complete", updated_at: new Date().toISOString() })
+        .eq("id", session.id),
+      serviceClient.from("habit_reminders").insert({
+        user_id: user.id,
+        course_id: course.id,
+        timezone: validTimezone,
+        utc_offset_hours: Math.round(utcOffsetHours),
+        is_active: true,
+      }),
+    ]);
 
     return NextResponse.json({ done: true, courseId: course.id });
   }

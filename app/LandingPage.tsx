@@ -91,7 +91,7 @@ export function LandingPage() {
             <button
               type="button"
               onClick={() => setStep("topic")}
-              className="text-sm text-stone-400 hover:text-stone-600 self-start mb-1"
+              className="text-sm text-stone-400 hover:text-stone-600 self-start mb-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 rounded"
             >
               ← Back
             </button>

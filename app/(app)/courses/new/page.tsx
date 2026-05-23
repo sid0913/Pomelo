@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { OptionRow } from "./OptionRow";
 import { OtherRow } from "./OtherRow";
+import { toTitleCase } from "@/lib/format";
 
 const LETTERS = ["A", "B", "C", "D"] as const;
 
@@ -17,9 +18,39 @@ const LOADING_VERBS = [
 ];
 
 const TOTAL_QUESTIONS = 5;
+const MIN_HOLD_MS = 800;
+const EXIT_ANIMATION_MS = 150;
 
-function toTitleCase(str: string) {
-  return str.replace(/\w\S*/g, (w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase());
+type QualifyingResponse = {
+  done: boolean;
+  sessionId?: string;
+  question?: string;
+  options?: string[];
+  courseId?: string;
+};
+
+async function callQualifyingChat(payload: {
+  sessionId?: string;
+  topic?: string;
+  userMessage: string;
+  truncateToTurns?: number;
+}): Promise<QualifyingResponse> {
+  const start = Date.now();
+  const res = await fetch("/api/qualifying-chat", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-timezone": Intl.DateTimeFormat().resolvedOptions().timeZone,
+    },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) throw new Error(await res.text());
+  const data = await res.json();
+  const elapsed = Date.now() - start;
+  if (elapsed < MIN_HOLD_MS) {
+    await new Promise((r) => setTimeout(r, MIN_HOLD_MS - elapsed));
+  }
+  return data as QualifyingResponse;
 }
 
 type WizardStep = {
@@ -111,32 +142,13 @@ export default function NewCoursePage() {
       userMessage = lastStep.freeText;
     }
 
-    const MIN_HOLD = 800;
-    const start = Date.now();
-
     try {
-      const res = await fetch("/api/qualifying-chat", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-timezone": Intl.DateTimeFormat().resolvedOptions().timeZone,
-        },
-        body: JSON.stringify({
-          sessionId: sid ?? undefined,
-          topic: sid ? undefined : topicOverride,
-          userMessage,
-          truncateToTurns,
-        }),
+      const data = await callQualifyingChat({
+        sessionId: sid ?? undefined,
+        topic: sid ? undefined : topicOverride,
+        userMessage,
+        truncateToTurns,
       });
-
-      if (!res.ok) throw new Error(await res.text());
-      const data = await res.json();
-
-      // Enforce minimum loading hold
-      const elapsed = Date.now() - start;
-      if (elapsed < MIN_HOLD) {
-        await new Promise((r) => setTimeout(r, MIN_HOLD - elapsed));
-      }
 
       if (data.done) {
         localStorage.removeItem("pomelo_pending_topic");
@@ -145,12 +157,12 @@ export default function NewCoursePage() {
         return;
       }
 
-      setSessionId(data.sessionId);
+      setSessionId(data.sessionId ?? null);
 
       // Append new step (without answer yet)
       const newStep: WizardStep = {
-        question: data.question,
-        options: data.options,
+        question: data.question ?? "",
+        options: data.options ?? [],
         selectedIndex: null,
         freeText: "",
       };
@@ -205,7 +217,7 @@ export default function NewCoursePage() {
     setPhase("exiting");
 
     // Brief exit animation before loading
-    await new Promise((r) => setTimeout(r, 150));
+    await new Promise((r) => setTimeout(r, EXIT_ANIMATION_MS));
 
     if (isQ5) {
       // After Q5 — submit and finish
@@ -213,29 +225,12 @@ export default function NewCoursePage() {
       const chipMessage = lastStep.freeText;
 
       setPhase("loading");
-      const MIN_HOLD = 800;
-      const start = Date.now();
 
       try {
-        const res = await fetch("/api/qualifying-chat", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "x-timezone": Intl.DateTimeFormat().resolvedOptions().timeZone,
-          },
-          body: JSON.stringify({
-            sessionId: sessionId ?? undefined,
-            userMessage: chipMessage,
-          }),
+        const data = await callQualifyingChat({
+          sessionId: sessionId ?? undefined,
+          userMessage: chipMessage,
         });
-
-        if (!res.ok) throw new Error(await res.text());
-        const data = await res.json();
-
-        const elapsed = Date.now() - start;
-        if (elapsed < MIN_HOLD) {
-          await new Promise((r) => setTimeout(r, MIN_HOLD - elapsed));
-        }
 
         if (data.done) {
           localStorage.removeItem("pomelo_pending_topic");
@@ -261,7 +256,7 @@ export default function NewCoursePage() {
     const prevStep = steps[prevStepIndex];
 
     setPhase("exiting");
-    await new Promise((r) => setTimeout(r, 150));
+    await new Promise((r) => setTimeout(r, EXIT_ANIMATION_MS));
 
     // Restore previous question's state
     setCurrentStep(prevStepIndex);
@@ -384,7 +379,7 @@ export default function NewCoursePage() {
           {currentStep > 0 && phase === "question" ? (
             <button
               onClick={handleBack}
-              className="text-sm text-stone-400 hover:text-stone-700 transition-colors"
+              className="text-sm text-stone-400 hover:text-stone-700 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 rounded"
               aria-label="Go back to previous question"
             >
               ← Back
@@ -507,7 +502,6 @@ export default function NewCoursePage() {
                       <button
                         onClick={() => {
                           setQ5Skipped(!q5Skipped);
-                          if (!q5Skipped) setChips([]);
                         }}
                         className={`self-start text-sm transition-colors cursor-pointer ${
                           q5Skipped
