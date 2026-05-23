@@ -98,7 +98,7 @@ export async function POST(req: NextRequest) {
     claudeResponse = await anthropic.messages.create({
       model: QUALIFYING_MODEL,
       max_tokens: 4096,
-      system: `${QUALIFYING_SYSTEM_PROMPT}\n\nThe learner's topic is: "${session.topic}"`,
+      system: `${QUALIFYING_SYSTEM_PROMPT}\n\nThe learner's topic is: "${session.topic.replace(/[\n\r"\\]/g, " ").trim()}"`,
       tools: [PRESENT_QUESTION_TOOL, FINISH_QUALIFYING_TOOL],
       tool_choice: toolChoice,
       messages,
@@ -190,7 +190,6 @@ export async function POST(req: NextRequest) {
     const timezone =
       req.headers.get("x-timezone") ??
       Intl.DateTimeFormat().resolvedOptions().timeZone;
-    const utcOffsetHours = -new Date().getTimezoneOffset() / 60;
 
     let validTimezone = "UTC";
     try {
@@ -199,6 +198,23 @@ export async function POST(req: NextRequest) {
     } catch {
       // invalid timezone — fall back to UTC
     }
+
+    // Derive offset from the validated client timezone, not the server clock.
+    const utcOffsetHours = (() => {
+      try {
+        const parts = new Intl.DateTimeFormat("en", {
+          timeZone: validTimezone,
+          timeZoneName: "shortOffset",
+        }).formatToParts(new Date());
+        const offsetStr = parts.find((p) => p.type === "timeZoneName")?.value ?? "GMT";
+        const m = offsetStr.match(/GMT([+-])(\d+)(?::(\d+))?/);
+        if (!m) return 0;
+        const sign = m[1] === "+" ? 1 : -1;
+        return sign * (parseInt(m[2], 10) + parseInt(m[3] ?? "0", 10) / 60);
+      } catch {
+        return 0;
+      }
+    })();
 
     await Promise.all([
       serviceClient.from("chapters").insert(chapterRows),
