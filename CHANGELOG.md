@@ -2,6 +2,15 @@
 
 All notable changes to Pomelo are documented here.
 
+## [0.2.1] — 2026-05-24
+
+### Added
+- Exit button in the qualifying wizard header — clears the pending topic and returns to `/courses`
+- Tests for `handleExit`: verifies localStorage cleanup and `/courses` navigation
+
+### Fixed
+- Exit button hidden during the 150ms `exiting` animation phase to prevent a navigation race with the in-flight qualifying-chat request
+
 ## [0.2.0] — 2026-05-23
 
 ### Added
