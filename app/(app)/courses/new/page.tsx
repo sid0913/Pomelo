@@ -249,6 +249,11 @@ export default function NewCoursePage() {
     }
   }, [canContinue, phase, steps, currentStep, selectedIndex, freeText, isQ5, chips, topic, sessionId]);
 
+  function handleExit() {
+    localStorage.removeItem("pomelo_pending_topic");
+    router.push("/courses");
+  }
+
   const handleBack = useCallback(async () => {
     if (currentStep === 0) return;
 
@@ -392,23 +397,35 @@ export default function NewCoursePage() {
           </p>
         </div>
 
-        {/* Progress dots */}
-        <div
-          role="status"
-          aria-label={`Question ${questionNumber} of ${TOTAL_QUESTIONS}`}
-          aria-live="polite"
-          className="flex items-center gap-1.5"
-        >
-          {Array.from({ length: TOTAL_QUESTIONS }, (_, i) => (
-            <span
-              key={i}
-              className={`w-2 h-2 rounded-full transition-colors duration-300 ${
-                i < questionNumber
-                  ? "bg-amber-500"
-                  : "bg-stone-300"
-              }`}
-            />
-          ))}
+        <div className="flex items-center gap-3">
+          {/* Progress dots */}
+          <div
+            role="status"
+            aria-label={`Question ${questionNumber} of ${TOTAL_QUESTIONS}`}
+            aria-live="polite"
+            className="flex items-center gap-1.5"
+          >
+            {Array.from({ length: TOTAL_QUESTIONS }, (_, i) => (
+              <span
+                key={i}
+                className={`w-2 h-2 rounded-full transition-colors duration-300 ${
+                  i < questionNumber
+                    ? "bg-amber-500"
+                    : "bg-stone-300"
+                }`}
+              />
+            ))}
+          </div>
+
+          {/* Exit */}
+          <button
+            onClick={handleExit}
+            disabled={phase === "exiting"}
+            className="text-sm text-stone-400 hover:text-stone-600 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 rounded disabled:opacity-0 cursor-pointer"
+            aria-label="Exit qualifying session"
+          >
+            Exit
+          </button>
         </div>
       </header>
 
