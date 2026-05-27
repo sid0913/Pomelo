@@ -37,7 +37,7 @@ export async function POST(
   // Reset to pending so the next GET will trigger generation
   const { error } = await serviceClient
     .from("chapters")
-    .update({ status: "pending", error: null, generation_started_at: null })
+    .update({ status: "pending", error: null, generation_started_at: null, enriched: false, cards: null })
     .eq("id", id);
 
   if (error) {

@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { generateSources, type UserProfile } from "@/lib/claude";
 import { searchYouTube } from "@/lib/youtube";
+import { searchImage } from "@/lib/images";
+import { parseCards, type Card, type UnresolvedCard } from "@/lib/cards";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -16,7 +18,7 @@ export async function GET(_req: NextRequest, { params }: Params) {
 
   const { data: chapter } = await serviceClient
     .from("chapters")
-    .select("id, enriched, videos, sources, courses!inner(user_id)")
+    .select("id, enriched, cards, sources, courses!inner(user_id)")
     .eq("id", chapterId)
     .single();
 
@@ -30,9 +32,27 @@ export async function GET(_req: NextRequest, { params }: Params) {
 
   return NextResponse.json({
     ready: chapter.enriched,
-    videos: chapter.videos ?? [],
+    cards: chapter.cards ?? null,
     sources: chapter.sources ?? [],
   });
+}
+
+async function resolveCards(unresolved: UnresolvedCard[]): Promise<Card[]> {
+  return Promise.all(
+    unresolved.map(async (card): Promise<Card> => {
+      if (card.type === "text") return card;
+      if (card.type === "callout") return card;
+
+      if (card.type === "video") {
+        const results = await searchYouTube(card.query, 1);
+        return { ...card, video: results[0] ?? null };
+      }
+
+      // image — tiered: Wikimedia → Unsplash
+      const imageUrl = await searchImage(card.query);
+      return { ...card, imageUrl };
+    })
+  );
 }
 
 export async function POST(_req: NextRequest, { params }: Params) {
@@ -44,10 +64,9 @@ export async function POST(_req: NextRequest, { params }: Params) {
 
   const serviceClient = createServiceClient();
 
-  // Fetch chapter + course for ownership check and context
   const { data: chapter } = await serviceClient
     .from("chapters")
-    .select("id, title, content, enriched, videos, sources, courses!inner(user_id, topic, user_profile)")
+    .select("id, title, content, enriched, cards, sources, courses!inner(user_id, topic, user_profile)")
     .eq("id", chapterId)
     .single();
 
@@ -68,7 +87,7 @@ export async function POST(_req: NextRequest, { params }: Params) {
   if (chapter.enriched) {
     return NextResponse.json({
       ready: true,
-      videos: chapter.videos ?? [],
+      cards: chapter.cards ?? null,
       sources: chapter.sources ?? [],
     });
   }
@@ -83,32 +102,41 @@ export async function POST(_req: NextRequest, { params }: Params) {
     .single();
 
   if (!claimed) {
-    // Another request beat us — return current state
+    // Another request beat us — poll current state (cards may not be written yet)
     const { data: current } = await serviceClient
       .from("chapters")
-      .select("videos, sources")
+      .select("cards, sources")
       .eq("id", chapterId)
       .single();
 
     return NextResponse.json({
-      ready: true,
-      videos: current?.videos ?? [],
+      ready: current?.cards != null,
+      cards: current?.cards ?? null,
       sources: current?.sources ?? [],
     });
   }
 
-  // Run YouTube + source generation concurrently
-  const searchQuery = `${chapter.title} ${course.topic}`;
-  const [videos, sources] = await Promise.all([
-    searchYouTube(searchQuery, 2),
-    generateSources(chapter.title, course.topic, course.user_profile),
-  ]);
+  // Parse markers from content and resolve media + sources concurrently.
+  // On any failure, reset enriched=false so the chapter can be re-enriched.
+  try {
+    const unresolved = parseCards(chapter.content ?? "");
+    const [cards, sources] = await Promise.all([
+      resolveCards(unresolved),
+      generateSources(chapter.title, course.topic, course.user_profile),
+    ]);
 
-  // Persist results
-  await serviceClient
-    .from("chapters")
-    .update({ videos, sources })
-    .eq("id", chapterId);
+    await serviceClient
+      .from("chapters")
+      .update({ cards, sources })
+      .eq("id", chapterId);
 
-  return NextResponse.json({ ready: true, videos, sources });
+    return NextResponse.json({ ready: true, cards, sources });
+  } catch (err) {
+    await serviceClient
+      .from("chapters")
+      .update({ enriched: false })
+      .eq("id", chapterId);
+    console.error("Enrichment failed, reset enriched flag:", err);
+    return NextResponse.json({ ready: false, cards: null, sources: [] });
+  }
 }

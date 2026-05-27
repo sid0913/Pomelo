@@ -4,6 +4,14 @@ import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { ChapterContent } from "./ChapterContent";
 import { ChapterChat } from "./ChapterChat";
 import { toTitleCase } from "@/lib/format";
+import type { Card } from "@/lib/cards";
+
+function parseStoredCards(raw: unknown): Card[] | null {
+  if (!Array.isArray(raw)) return null;
+  const KNOWN_TYPES = new Set(["text", "video", "image", "callout"]);
+  const valid = raw.filter((c) => c && typeof c === "object" && KNOWN_TYPES.has((c as { type?: unknown }).type as string));
+  return valid.length > 0 ? (valid as Card[]) : null;
+}
 
 type Props = { params: Promise<{ id: string; cId: string }> };
 
@@ -19,7 +27,7 @@ export default async function ChapterPage({ params }: Props) {
   const { data: chapter } = await serviceClient
     .from("chapters")
     .select(
-      "id, chapter_index, title, estimated_minutes, content, status, error, courses!inner(id, topic, user_id)"
+      "id, chapter_index, title, estimated_minutes, content, status, error, cards, courses!inner(id, topic, user_id)"
     )
     .eq("id", chapterId)
     .eq("courses.user_id", user.id)
@@ -80,6 +88,7 @@ export default async function ChapterPage({ params }: Props) {
               initialContent={chapter.content}
               initialStatus={chapter.status}
               initialError={chapter.error}
+              initialCards={parseStoredCards((chapter as { cards?: unknown }).cards)}
               courseId={courseId}
               next={next}
             />

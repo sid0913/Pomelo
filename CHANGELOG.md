@@ -2,6 +2,24 @@
 
 All notable changes to Pomelo are documented here.
 
+## [0.3.0] — 2026-05-27
+
+### Added
+- **Visual card system** — chapters now render as a structured card feed (text, video, image, callout) instead of a flat prose block. Cards are parsed from LLM-generated marker syntax and resolved server-side during enrichment.
+- **Image search pipeline** — tiered image lookup via Wikimedia Commons (JPEG/PNG/SVG, origin-validated to `upload.wikimedia.org`) with Unsplash CDN fallback. Images are embedded inline between text cards.
+- **Callout cards** — four styled highlight types (Key insight, Definition, Warning, Example) with per-label colors (amber, stone, red, blue) and ARIA labels. Renders inline between paragraphs.
+- **Richer LLM prompt** — `buildChapterPrompt` updated to target 3–5 visual markers per chapter with specific image query guidance (labeled diagrams vs. photographs) and learner-level weighting (beginners get definitions first; advanced learners get detailed schematics).
+- **Supabase migration** — `cards JSONB` column added to `chapters` table via `003_cards.sql`.
+- **Unit tests** — 46 new tests for `parseCards` (all card types, edge cases, pipe-in-content) and `searchImage` (Wikimedia origin check, Unsplash hostname validation, MIME filtering). Total: 88 passing.
+
+### Fixed
+- Enrichment exceptions no longer permanently lock a chapter (`enriched=true, cards=null`) — the flag resets to `false` on failure so re-enrichment can run.
+- Race condition in enrichment: a second concurrent request now returns `ready: false` while the first is still resolving, preventing stale "done with no cards" responses.
+- Retry route now resets `enriched: false, cards: null` so card enrichment re-runs after a generation retry.
+- OtherRow: `stopPropagation` on keydown prevents keyboard events from leaking to parent wizard nav.
+- New course page: bounds check prevents out-of-range `selectedIndex` from crashing option lookup.
+- Marker strip regex in prose fallback now includes CALLOUT and uses dotAll flag, preventing raw marker text from appearing during streaming.
+
 ## [0.2.1] — 2026-05-24
 
 ### Added

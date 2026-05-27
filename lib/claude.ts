@@ -49,7 +49,29 @@ Learner profile:
 - Topics they need to learn (FOCUS HERE): ${userProfile.gap_topics.join(", ") || "the fundamentals"}
 - Experience level: ${userProfile.experience_level}
 
-Write the full chapter content as clear, engaging prose. Do not include the chapter title or any markdown headers — start directly with the content. Use paragraphs, not bullet lists. Be concrete with examples. Assume the learner has the background described above — do not re-explain what they already know.`;
+Write the full chapter content as clear, engaging prose. Do not include the chapter title or any markdown headers — start directly with the content. Use paragraphs, not bullet lists. Be concrete with examples. Assume the learner has the background described above — do not re-explain what they already know.
+
+Structure the chapter with visual cadence. Every 2–3 paragraphs, embed a media marker on its own line with blank lines above and below. Target 3–5 markers per chapter total.
+
+Available marker types:
+- Video: [[VIDEO: <youtube search query> | <1–2 sentence framing: why this visual matters here>]]
+- Image: [[IMAGE: <specific educational image query> | <caption>]]
+- Callout: [[CALLOUT: <key insight or definition in 1–2 sentences — no pipe characters> | <Key insight | Definition | Warning | Example>]]
+
+Image query guidance — be specific:
+- Scientific diagrams: "<concept> diagram labeled" or "<process> schematic"
+  Examples: "DNA replication diagram labeled", "mitosis stages diagram", "projectile motion force diagram physics", "photosynthesis light reactions diagram"
+- Photographs: "photograph of <organism or phenomenon>"
+  Examples: "photograph frog embryo development stages", "cell under electron microscope", "heart anatomy cross section photograph"
+- Always prefer labeled diagrams over generic terms: "krebs cycle diagram" not "metabolism"
+
+Callout placement: never place two CALLOUT markers back to back — always separate with at least one paragraph. Use callouts to anchor the single most important concept in each section.
+
+${userProfile.experience_level === "beginner"
+  ? "This is a beginner learner — prefer callout cards to define key terms and anchor concepts before introducing visuals."
+  : "This is an intermediate or advanced learner — prefer detailed labeled diagrams and process schematics over basic definitions."}
+
+Place markers only where they genuinely clarify a concept, not decoratively.`;
 }
 
 const SUGGEST_SOURCES_TOOL: Anthropic.Messages.Tool = {
