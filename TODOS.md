@@ -18,3 +18,11 @@
 - [ ] Double-submit guard on qualifying wizard: disable form / set in-flight flag so rapid taps can't fire two concurrent requests
 - [ ] Orphaned course cleanup: if `chapters.insert` fails after `courses.insert`, roll back or queue a cleanup job
 - [ ] Stale chips on back-to-Q5: when user navigates back to Q5 via back button, existing chips reflect old session state — decide whether to clear or restore
+
+## Visual learning (deferred from /autoplan visual-learning review)
+
+- [ ] Revisit AI image generation when per-image cost drops below $0.01 (currently ~$0.04/image with DALL-E 3)
+- [ ] Add learner modality preference to qualifying conversation: "Are you more of a visual learner or do you prefer reading?" — use response to weight diagram/callout vs text ratio (v2)
+- [ ] Move marker syntax spec to `lib/markers.ts` so `buildChapterPrompt` and `parseCards` share the source of truth — prevents silent prompt/parser drift (v2 refactor)
+- [ ] Chapter completion rate baseline: instrument and record before shipping visual upgrade, then re-measure after 10+ chapters to validate impact
+- [ ] Evaluate @mermaid-js/parser as server-side validator vs bundling full mermaid on server — check if mermaid.parse() works in Node.js without DOM polyfill

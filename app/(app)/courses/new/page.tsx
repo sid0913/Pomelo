@@ -136,9 +136,13 @@ export default function NewCoursePage() {
     if (!lastStep) {
       // First call — send topic as initial prompt
       userMessage = topicOverride;
-    } else if (lastStep.selectedIndex !== null) {
+    } else if (
+      lastStep.selectedIndex !== null &&
+      lastStep.selectedIndex < lastStep.options.length
+    ) {
       userMessage = lastStep.options[lastStep.selectedIndex];
     } else {
+      // selectedIndex is null (free-text) or 4 (OtherRow) — both use freeText
       userMessage = lastStep.freeText;
     }
 

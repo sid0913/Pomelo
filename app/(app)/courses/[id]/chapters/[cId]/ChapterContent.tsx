@@ -2,15 +2,9 @@
 
 import { useEffect, useRef, useState, useCallback } from "react";
 import Link from "next/link";
+import type { Card, VideoCard, ImageCard, CalloutCard } from "@/lib/cards";
 
 type Status = "pending" | "generating" | "done" | "failed";
-
-type VideoResult = {
-  id: string;
-  title: string;
-  channelTitle: string;
-  thumbnailUrl: string;
-};
 
 type Source = {
   title: string;
@@ -24,11 +18,13 @@ type Props = {
   initialContent: string | null;
   initialStatus: Status;
   initialError: string | null;
+  initialCards: Card[] | null;
   next: { id: string; title: string } | null;
 };
 
 const POLL_INTERVAL_MS = 2000;
 const STILL_WORKING_MS = 8000;
+const MARKER_STRIP_RE = /\[\[(?:VIDEO|IMAGE|CALLOUT):[^\]]+\]\]/gs;
 
 const SOURCE_ICONS: Record<Source["type"], string> = {
   article: "📄",
@@ -38,12 +34,170 @@ const SOURCE_ICONS: Record<Source["type"], string> = {
   other: "🔗",
 };
 
+// ── Card components ───────────────────────────────────────────────────────────
+
+function TextCard({ content, isStreaming }: { content: string; isStreaming?: boolean }) {
+  return (
+    <article
+      className={`prose prose-stone prose-lg max-w-none leading-8 ${isStreaming ? "streaming-cursor" : ""}`}
+      aria-live={isStreaming ? "polite" : undefined}
+    >
+      {content.split("\n\n").map((para, i) => (
+        <p key={i} className="mb-5 text-stone-800 text-[17px] leading-[1.8]">
+          {para}
+        </p>
+      ))}
+    </article>
+  );
+}
+
+const YOUTUBE_ID_RE = /^[a-zA-Z0-9_-]{11}$/;
+
+function VideoCardComponent({ card }: { card: VideoCard }) {
+  if (!card.video || !YOUTUBE_ID_RE.test(card.video.id)) return null;
+  return (
+    <div className="flex flex-col gap-3">
+      <p className="text-stone-500 italic text-[15px] leading-relaxed">{card.framing}</p>
+      <div className="rounded-xl overflow-hidden border border-stone-200">
+        <div className="relative" style={{ paddingBottom: "56.25%" }}>
+          <iframe
+            src={`https://www.youtube.com/embed/${card.video.id}`}
+            title={card.video.title}
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowFullScreen
+            className="absolute inset-0 w-full h-full"
+            loading="lazy"
+          />
+        </div>
+        <div className="px-3 py-2">
+          <p className="text-sm font-medium text-stone-800 leading-snug">{card.video.title}</p>
+          <p className="text-xs text-stone-400 mt-0.5">{card.video.channelTitle}</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ImageCardComponent({ card }: { card: ImageCard }) {
+  if (!card.imageUrl) return null;
+  return (
+    <figure className="flex flex-col gap-2">
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={card.imageUrl}
+        alt={card.caption}
+        className="rounded-xl border border-stone-200 w-full object-contain max-h-96 bg-stone-50"
+      />
+      <figcaption className="text-xs text-stone-500 text-center italic">{card.caption}</figcaption>
+    </figure>
+  );
+}
+
+const CALLOUT_BOX: Record<string, string> = {
+  "Key insight": "bg-amber-50 border-l-4 border-amber-500",
+  "Definition":  "bg-stone-100 border-l-4 border-stone-400",
+  "Warning":     "bg-red-50 border-l-4 border-red-400",
+  "Example":     "bg-blue-50 border-l-4 border-blue-400",
+};
+
+const CALLOUT_BADGE: Record<string, string> = {
+  "Key insight": "bg-amber-100 text-amber-800",
+  "Definition":  "bg-stone-200 text-stone-700",
+  "Warning":     "bg-red-100 text-red-700",
+  "Example":     "bg-blue-100 text-blue-700",
+};
+
+function CalloutCardComponent({ card }: { card: CalloutCard }) {
+  if (!card.content) return null;
+  const boxStyle = CALLOUT_BOX[card.label] ?? CALLOUT_BOX["Definition"];
+  const badgeStyle = CALLOUT_BADGE[card.label] ?? CALLOUT_BADGE["Definition"];
+  return (
+    <aside aria-label={card.label} className={`${boxStyle} rounded-r-xl p-4`}>
+      <span className={`${badgeStyle} text-xs font-semibold px-2 py-0.5 rounded-full`}>
+        {card.label}
+      </span>
+      <p className="mt-2 text-[15px] leading-[1.7] text-stone-700 font-medium">{card.content}</p>
+    </aside>
+  );
+}
+
+function CardRenderer({ card, isStreaming }: { card: Card; isStreaming?: boolean }) {
+  if (card.type === "text") return <TextCard content={card.content} isStreaming={isStreaming} />;
+  if (card.type === "video") return <VideoCardComponent card={card} />;
+  if (card.type === "image") return <ImageCardComponent card={card} />;
+  if (card.type === "callout") return <CalloutCardComponent card={card} />;
+  return null;
+}
+
+// ── Shared post-content sections ──────────────────────────────────────────────
+
+function SourcesList({ sources, enriching }: { sources: Source[]; enriching: boolean }) {
+  if (!enriching && sources.length === 0) return null;
+  return (
+    <section className="mt-10">
+      <h2 className="text-sm font-semibold text-stone-500 uppercase tracking-wide mb-4">
+        Further reading
+      </h2>
+      {enriching && sources.length === 0 ? (
+        <div className="flex items-center gap-2 text-stone-400 text-sm">
+          <div className="w-4 h-4 rounded-full border border-stone-200 border-t-amber-600 animate-spin shrink-0" />
+          Curating sources…
+        </div>
+      ) : (
+        <div className="flex flex-col gap-3">
+          {sources.map((s, i) => (
+            <div key={i} className="flex gap-3 py-3 border-b border-stone-100 last:border-0">
+              <span className="shrink-0 text-base" aria-label={s.type}>
+                {SOURCE_ICONS[s.type]}
+              </span>
+              <div>
+                <p className="text-sm font-medium text-stone-800">{s.title}</p>
+                <p className="text-xs text-stone-500 mt-0.5 leading-relaxed">{s.description}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </section>
+  );
+}
+
+function ChapterCTA({ courseId, next }: { courseId: string; next: { id: string; title: string } | null }) {
+  return (
+    <div className="mt-12 pt-8 border-t border-stone-200 text-center">
+      {next ? (
+        <Link
+          href={`/courses/${courseId}/chapters/${next.id}`}
+          className="inline-block rounded-lg bg-amber-600 px-6 py-3 text-white font-semibold hover:bg-amber-700 transition-colors"
+        >
+          Next chapter →
+        </Link>
+      ) : (
+        <div>
+          <p className="text-stone-600 font-medium mb-3">
+            You&apos;ve completed this course.
+          </p>
+          <Link
+            href={`/courses/${courseId}`}
+            className="text-sm text-amber-600 hover:underline"
+          >
+            ← Back to course
+          </Link>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Main component ────────────────────────────────────────────────────────────
+
 export function ChapterContent({
   chapterId,
   courseId,
   initialContent,
   initialStatus,
   initialError,
+  initialCards,
   next,
 }: Props) {
   const [content, setContent] = useState(initialContent ?? "");
@@ -54,7 +208,7 @@ export function ChapterContent({
   const [completed, setCompleted] = useState(false);
   const [retrying, setRetrying] = useState(false);
 
-  const [videos, setVideos] = useState<VideoResult[]>([]);
+  const [cards, setCards] = useState<Card[] | null>(initialCards);
   const [sources, setSources] = useState<Source[]>([]);
   const [enriching, setEnriching] = useState(false);
 
@@ -91,7 +245,7 @@ export function ChapterContent({
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
         if (data?.ready) {
-          setVideos(data.videos ?? []);
+          setCards(data.cards ?? null);
           setSources(data.sources ?? []);
         }
       })
@@ -240,9 +394,28 @@ export function ChapterContent({
     );
   }
 
+  // ── Enriched: render card view ────────────────────────────────────────────
+  if (cards && cards.length > 0) {
+    return (
+      <>
+        <div className="flex flex-col gap-10">
+          {cards.map((card, i) => (
+            <CardRenderer key={i} card={card} />
+          ))}
+        </div>
+
+        <div ref={sentinelRef} className="h-px" aria-hidden />
+        <SourcesList sources={sources} enriching={enriching} />
+        {status === "done" && <ChapterCTA courseId={courseId} next={next} />}
+      </>
+    );
+  }
+
+  // ── Fallback: streaming prose or old chapter without cards ────────────────
+  const displayContent = content.replace(MARKER_STRIP_RE, "").trim();
+
   return (
     <>
-      {/* Chapter prose */}
       <article
         className={`prose prose-stone prose-lg max-w-none leading-8 ${
           isStreaming ? "streaming-cursor" : ""
@@ -250,106 +423,16 @@ export function ChapterContent({
         aria-live="polite"
         aria-label="Chapter content"
       >
-        {content.split("\n\n").map((para, i) => (
+        {displayContent.split("\n\n").filter(Boolean).map((para, i) => (
           <p key={i} className="mb-5 text-stone-800 text-[17px] leading-[1.8]">
             {para}
           </p>
         ))}
       </article>
 
-      {/* Scroll sentinel */}
       <div ref={sentinelRef} className="h-px" aria-hidden />
-
-      {/* Enrichment: Videos */}
-      {status === "done" && (enriching || videos.length > 0) && (
-        <section className="mt-10">
-          <h2 className="text-sm font-semibold text-stone-500 uppercase tracking-wide mb-4">
-            Videos
-          </h2>
-          {enriching && videos.length === 0 ? (
-            <div className="flex items-center gap-2 text-stone-400 text-sm">
-              <div className="w-4 h-4 rounded-full border border-stone-200 border-t-amber-600 animate-spin shrink-0" />
-              Finding videos…
-            </div>
-          ) : (
-            <div className="flex flex-col gap-4">
-              {videos.map((v) => (
-                <div key={v.id} className="rounded-xl overflow-hidden border border-stone-200">
-                  <div className="relative" style={{ paddingBottom: "56.25%" }}>
-                    <iframe
-                      src={`https://www.youtube.com/embed/${v.id}`}
-                      title={v.title}
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                      allowFullScreen
-                      className="absolute inset-0 w-full h-full"
-                      loading="lazy"
-                    />
-                  </div>
-                  <div className="px-3 py-2">
-                    <p className="text-sm font-medium text-stone-800 leading-snug">{v.title}</p>
-                    <p className="text-xs text-stone-400 mt-0.5">{v.channelTitle}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </section>
-      )}
-
-      {/* Enrichment: Sources */}
-      {status === "done" && (enriching || sources.length > 0) && (
-        <section className="mt-8">
-          <h2 className="text-sm font-semibold text-stone-500 uppercase tracking-wide mb-4">
-            Further reading
-          </h2>
-          {enriching && sources.length === 0 ? (
-            <div className="flex items-center gap-2 text-stone-400 text-sm">
-              <div className="w-4 h-4 rounded-full border border-stone-200 border-t-amber-600 animate-spin shrink-0" />
-              Curating sources…
-            </div>
-          ) : (
-            <div className="flex flex-col gap-3">
-              {sources.map((s, i) => (
-                <div key={i} className="flex gap-3 py-3 border-b border-stone-100 last:border-0">
-                  <span className="shrink-0 text-base" aria-label={s.type}>
-                    {SOURCE_ICONS[s.type]}
-                  </span>
-                  <div>
-                    <p className="text-sm font-medium text-stone-800">{s.title}</p>
-                    <p className="text-xs text-stone-500 mt-0.5 leading-relaxed">{s.description}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </section>
-      )}
-
-      {/* Post-completion CTA */}
-      {status === "done" && (
-        <div className="mt-12 pt-8 border-t border-stone-200 text-center">
-          {next ? (
-            <Link
-              href={`/courses/${courseId}/chapters/${next.id}`}
-              className="inline-block rounded-lg bg-amber-600 px-6 py-3 text-white font-semibold hover:bg-amber-700 transition-colors"
-            >
-              Next chapter →
-            </Link>
-          ) : (
-            <div>
-              <p className="text-stone-600 font-medium mb-3">
-                You&apos;ve completed this course.
-              </p>
-              <Link
-                href={`/courses/${courseId}`}
-                className="text-sm text-amber-600 hover:underline"
-              >
-                ← Back to course
-              </Link>
-            </div>
-          )}
-        </div>
-      )}
+      {status === "done" && <SourcesList sources={sources} enriching={enriching} />}
+      {status === "done" && <ChapterCTA courseId={courseId} next={next} />}
     </>
   );
 }

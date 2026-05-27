@@ -72,6 +72,7 @@ export function OtherRow({
           onChange={(e) => onChange(e.target.value)}
           onClick={(e) => e.stopPropagation()}
           onKeyDown={(e) => {
+            e.stopPropagation();
             if (e.key === "ArrowUp" && value === "") {
               e.preventDefault();
               onArrowUp();
