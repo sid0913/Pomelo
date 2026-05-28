@@ -20,7 +20,7 @@ export async function GET(req: NextRequest) {
 
   const redirectUrl = topic
     ? `${origin}/courses/new?topic=${encodeURIComponent(topic)}`
-    : `${origin}/courses/new`;
+    : `${origin}/courses`;
 
   return NextResponse.redirect(redirectUrl);
 }
