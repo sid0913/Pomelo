@@ -3,7 +3,7 @@
 import { useState, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
 
-type Step = "topic" | "email" | "sent";
+type Step = "topic" | "email" | "sent" | "returning";
 
 export function LandingPage() {
   const [step, setStep] = useState<Step>("topic");
@@ -29,7 +29,10 @@ export function LandingPage() {
 
     const supabase = createClient();
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? window.location.origin;
-    const redirectTo = `${siteUrl}/auth/callback?topic=${encodeURIComponent(topic.trim())}`;
+    const pendingTopic = topic.trim();
+    const redirectTo = pendingTopic
+      ? `${siteUrl}/auth/callback?topic=${encodeURIComponent(pendingTopic)}`
+      : `${siteUrl}/auth/callback`;
 
     const { error } = await supabase.auth.signInWithOtp({
       email: email.trim(),
@@ -83,6 +86,13 @@ export function LandingPage() {
             >
               Get started →
             </button>
+            <button
+              type="button"
+              onClick={() => setStep("returning")}
+              className="text-sm text-stone-400 hover:text-stone-600 transition-colors text-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 rounded"
+            >
+              Already have an account? Sign in →
+            </button>
           </form>
         )}
 
@@ -132,6 +142,46 @@ export function LandingPage() {
           </form>
         )}
 
+        {step === "returning" && (
+          <form onSubmit={handleEmailSubmit} className="step-fade-enter flex flex-col gap-4">
+            <button
+              type="button"
+              onClick={() => setStep("topic")}
+              className="text-sm text-stone-400 hover:text-stone-600 self-start mb-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 rounded"
+            >
+              ← Back
+            </button>
+            <h2 className="text-2xl font-semibold text-stone-900">
+              Welcome back
+            </h2>
+            <p className="text-stone-500 -mt-2">
+              Enter your email and we&apos;ll send you a sign-in link.
+            </p>
+            <label htmlFor="returning-email" className="sr-only">
+              Email address
+            </label>
+            <input
+              id="returning-email"
+              ref={emailRef}
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="you@example.com"
+              className="w-full rounded-lg border border-stone-200 bg-white px-4 py-3 text-stone-900 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-amber-500 text-base"
+              autoFocus
+              required
+            />
+            {errorMsg && <p className="text-red-600 text-sm">{errorMsg}</p>}
+            <button
+              type="submit"
+              className="w-full rounded-lg bg-amber-600 px-4 py-3 text-white font-semibold hover:bg-amber-700 transition-colors disabled:opacity-50"
+              disabled={loading || !email.trim()}
+            >
+              {loading ? "Sending…" : "Send sign-in link →"}
+            </button>
+          </form>
+        )}
+
         {step === "sent" && (
           <div className="step-fade-enter text-center">
             <h2 className="text-2xl font-semibold text-stone-900 mb-2">
@@ -139,9 +189,15 @@ export function LandingPage() {
             </h2>
             <p className="text-stone-500 leading-relaxed">
               We sent a sign-in link to{" "}
-              <span className="font-medium text-stone-700">{email}</span>. Click
-              it to start building your personalized{" "}
-              <span className="font-medium text-stone-700">{topic}</span> course.
+              <span className="font-medium text-stone-700">{email}</span>.{" "}
+              {topic.trim() ? (
+                <>
+                  Click it to start building your personalized{" "}
+                  <span className="font-medium text-stone-700">{topic}</span> course.
+                </>
+              ) : (
+                "Click it to sign in to your account."
+              )}
             </p>
             <p className="mt-4 text-sm text-stone-400">
               Didn&apos;t get it? Check your spam folder.
