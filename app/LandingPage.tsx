@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
 
 type Step = "topic" | "email" | "sent" | "returning";
@@ -11,7 +11,13 @@ export function LandingPage() {
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
+  const topicRef = useRef<HTMLInputElement>(null);
   const emailRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (step === "topic") topicRef.current?.focus();
+    else if (step === "returning") emailRef.current?.focus();
+  }, [step]);
 
   function handleTopicSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -34,16 +40,21 @@ export function LandingPage() {
       ? `${siteUrl}/auth/callback?topic=${encodeURIComponent(pendingTopic)}`
       : `${siteUrl}/auth/callback`;
 
-    const { error } = await supabase.auth.signInWithOtp({
-      email: email.trim(),
-      options: { emailRedirectTo: redirectTo },
-    });
+    try {
+      const { error } = await supabase.auth.signInWithOtp({
+        email: email.trim(),
+        options: { emailRedirectTo: redirectTo },
+      });
 
-    setLoading(false);
-
-    if (error) {
+      if (error) {
+        setErrorMsg("Something went wrong. Please try again.");
+        return;
+      }
+    } catch {
       setErrorMsg("Something went wrong. Please try again.");
       return;
+    } finally {
+      setLoading(false);
     }
 
     setStep("sent");
@@ -69,12 +80,12 @@ export function LandingPage() {
             </label>
             <input
               id="topic"
+              ref={topicRef}
               type="text"
               value={topic}
               onChange={(e) => setTopic(e.target.value)}
               placeholder="e.g., molecular biology, machine learning, financial modeling"
               className="w-full rounded-lg border border-stone-200 bg-white px-4 py-3 text-stone-900 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-amber-500 text-base"
-              autoFocus
               required
               minLength={2}
               maxLength={200}
@@ -89,7 +100,7 @@ export function LandingPage() {
             <button
               type="button"
               onClick={() => setStep("returning")}
-              className="text-sm text-stone-400 hover:text-stone-600 transition-colors text-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 rounded"
+              className="text-sm text-stone-400 hover:text-stone-600 transition-colors text-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 rounded cursor-pointer"
             >
               Already have an account? Sign in →
             </button>
@@ -127,6 +138,7 @@ export function LandingPage() {
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              onBlur={(e) => setEmail(e.target.value)}
               placeholder="you@example.com"
               className="w-full rounded-lg border border-stone-200 bg-white px-4 py-3 text-stone-900 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-amber-500 text-base"
               required
@@ -134,7 +146,7 @@ export function LandingPage() {
             {errorMsg && <p className="text-red-600 text-sm">{errorMsg}</p>}
             <button
               type="submit"
-              className="w-full rounded-lg bg-amber-600 px-4 py-3 text-white font-semibold hover:bg-amber-700 transition-colors disabled:opacity-50"
+              className="w-full rounded-lg bg-amber-600 px-4 py-3 text-white font-semibold hover:bg-amber-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
               disabled={loading || !email.trim()}
             >
               {loading ? "Sending…" : "Send sign-in link →"}
@@ -147,7 +159,7 @@ export function LandingPage() {
             <button
               type="button"
               onClick={() => setStep("topic")}
-              className="text-sm text-stone-400 hover:text-stone-600 self-start mb-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 rounded"
+              className="text-sm text-stone-400 hover:text-stone-600 self-start mb-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 rounded cursor-pointer"
             >
               ← Back
             </button>
@@ -166,9 +178,9 @@ export function LandingPage() {
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              onBlur={(e) => setEmail(e.target.value)}
               placeholder="you@example.com"
               className="w-full rounded-lg border border-stone-200 bg-white px-4 py-3 text-stone-900 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-amber-500 text-base"
-              autoFocus
               required
             />
             {errorMsg && <p className="text-red-600 text-sm">{errorMsg}</p>}
