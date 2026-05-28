@@ -63,13 +63,13 @@ export function LandingPage() {
   return (
     <main className="flex min-h-screen flex-col items-center justify-center px-4">
       <div className="w-full max-w-md">
-        <p className="text-center text-xs font-semibold tracking-widest text-amber-600 uppercase mb-10">
+        <p className="text-center text-xs font-semibold tracking-widest text-orange-700 uppercase mb-10">
           Pomelo
         </p>
 
         {step === "topic" && (
           <form onSubmit={handleTopicSubmit} className="step-fade-enter flex flex-col gap-4">
-            <h1 className="text-center text-4xl font-bold text-stone-900 leading-tight mb-2">
+            <h1 className="font-display text-center text-4xl font-bold text-stone-900 leading-tight mb-2">
               The course that skips what you already know.
             </h1>
             <p className="text-center text-stone-500 mb-2">
@@ -85,14 +85,14 @@ export function LandingPage() {
               value={topic}
               onChange={(e) => setTopic(e.target.value)}
               placeholder="e.g., molecular biology, machine learning, financial modeling"
-              className="w-full rounded-lg border border-stone-200 bg-white px-4 py-3 text-stone-900 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-amber-500 text-base"
+              className="w-full rounded-lg border border-stone-200 bg-white px-4 py-3 text-stone-900 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-orange-700 text-base"
               required
               minLength={2}
               maxLength={200}
             />
             <button
               type="submit"
-              className="w-full rounded-lg bg-amber-600 px-4 py-3 text-white font-semibold hover:bg-amber-700 transition-colors disabled:opacity-50"
+              className="w-full rounded-lg bg-orange-700 px-4 py-3 text-white font-semibold hover:bg-orange-800 transition-colors disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
               disabled={!topic.trim()}
             >
               Get started →
@@ -100,7 +100,7 @@ export function LandingPage() {
             <button
               type="button"
               onClick={() => setStep("returning")}
-              className="text-sm text-stone-400 hover:text-stone-600 transition-colors text-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 rounded cursor-pointer"
+              className="text-sm text-stone-400 hover:text-stone-600 transition-colors text-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-700 rounded cursor-pointer"
             >
               Already have an account? Sign in →
             </button>
@@ -112,11 +112,11 @@ export function LandingPage() {
             <button
               type="button"
               onClick={() => setStep("topic")}
-              className="text-sm text-stone-400 hover:text-stone-600 self-start mb-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 rounded"
+              className="text-sm text-stone-400 hover:text-stone-600 self-start mb-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-700 rounded"
             >
               ← Back
             </button>
-            <div className="rounded-lg bg-amber-50 border border-amber-100 px-4 py-3">
+            <div className="rounded-lg bg-[#FEF3EC] border border-orange-100 px-4 py-3">
               <p className="text-sm text-stone-600">
                 <span className="font-medium text-stone-800">Your topic:</span>{" "}
                 {topic}
@@ -140,13 +140,13 @@ export function LandingPage() {
               onChange={(e) => setEmail(e.target.value)}
               onBlur={(e) => setEmail(e.target.value)}
               placeholder="you@example.com"
-              className="w-full rounded-lg border border-stone-200 bg-white px-4 py-3 text-stone-900 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-amber-500 text-base"
+              className="w-full rounded-lg border border-stone-200 bg-white px-4 py-3 text-stone-900 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-orange-700 text-base"
               required
             />
             {errorMsg && <p className="text-red-600 text-sm">{errorMsg}</p>}
             <button
               type="submit"
-              className="w-full rounded-lg bg-amber-600 px-4 py-3 text-white font-semibold hover:bg-amber-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+              className="w-full rounded-lg bg-orange-700 px-4 py-3 text-white font-semibold hover:bg-orange-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
               disabled={loading || !email.trim()}
             >
               {loading ? "Sending…" : "Send sign-in link →"}
@@ -159,11 +159,11 @@ export function LandingPage() {
             <button
               type="button"
               onClick={() => setStep("topic")}
-              className="text-sm text-stone-400 hover:text-stone-600 self-start mb-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 rounded cursor-pointer"
+              className="text-sm text-stone-400 hover:text-stone-600 self-start mb-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-700 rounded cursor-pointer"
             >
               ← Back
             </button>
-            <h2 className="text-2xl font-semibold text-stone-900">
+            <h2 className="font-display text-2xl font-semibold text-stone-900">
               Welcome back
             </h2>
             <p className="text-stone-500 -mt-2">
@@ -180,13 +180,13 @@ export function LandingPage() {
               onChange={(e) => setEmail(e.target.value)}
               onBlur={(e) => setEmail(e.target.value)}
               placeholder="you@example.com"
-              className="w-full rounded-lg border border-stone-200 bg-white px-4 py-3 text-stone-900 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-amber-500 text-base"
+              className="w-full rounded-lg border border-stone-200 bg-white px-4 py-3 text-stone-900 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-orange-700 text-base"
               required
             />
             {errorMsg && <p className="text-red-600 text-sm">{errorMsg}</p>}
             <button
               type="submit"
-              className="w-full rounded-lg bg-amber-600 px-4 py-3 text-white font-semibold hover:bg-amber-700 transition-colors disabled:opacity-50"
+              className="w-full rounded-lg bg-orange-700 px-4 py-3 text-white font-semibold hover:bg-orange-800 transition-colors disabled:opacity-50"
               disabled={loading || !email.trim()}
             >
               {loading ? "Sending…" : "Send sign-in link →"}
@@ -196,7 +196,7 @@ export function LandingPage() {
 
         {step === "sent" && (
           <div className="step-fade-enter text-center">
-            <h2 className="text-2xl font-semibold text-stone-900 mb-2">
+            <h2 className="font-display text-2xl font-semibold text-stone-900 mb-2">
               Check your inbox
             </h2>
             <p className="text-stone-500 leading-relaxed">

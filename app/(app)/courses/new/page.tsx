@@ -56,8 +56,7 @@ async function callQualifyingChat(payload: {
 type WizardStep = {
   question: string;
   options: string[];
-  // what the user answered
-  selectedIndex: number | null; // null = free-text
+  selectedIndex: number | null;
   freeText: string;
 };
 
@@ -73,16 +72,13 @@ export default function NewCoursePage() {
   const [verbIndex, setVerbIndex] = useState(0);
   const [error, setError] = useState<string | null>(null);
 
-  // Wizard history — one entry per question shown
   const [steps, setSteps] = useState<WizardStep[]>([]);
-  const [currentStep, setCurrentStep] = useState(0); // 0-indexed
+  const [currentStep, setCurrentStep] = useState(0);
 
-  // Per-question transient state
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [freeText, setFreeText] = useState("");
   const [focusedOption, setFocusedOption] = useState<number>(0);
 
-  // Q5 chip state
   const [chips, setChips] = useState<string[]>([]);
   const [chipInput, setChipInput] = useState("");
   const [q5Skipped, setQ5Skipped] = useState(false);
@@ -96,7 +92,6 @@ export default function NewCoursePage() {
     ? chips.length > 0 || q5Skipped
     : selectedIndex !== null && (selectedIndex < 4 || freeText.trim().length > 0);
 
-  // Rotating verb during loading
   useEffect(() => {
     if (phase !== "loading") return;
     const id = setInterval(
@@ -106,7 +101,6 @@ export default function NewCoursePage() {
     return () => clearInterval(id);
   }, [phase]);
 
-  // Initial load: get topic and send first message
   useEffect(() => {
     const fromUrl = searchParams.get("topic");
     const fromStorage = localStorage.getItem("pomelo_pending_topic");
@@ -129,12 +123,10 @@ export default function NewCoursePage() {
     setPhase("loading");
     setError(null);
 
-    // Build the user message from whatever the last step's answer was
     const lastStep = currentTurns[currentTurns.length - 1];
     let userMessage: string;
 
     if (!lastStep) {
-      // First call — send topic as initial prompt
       userMessage = topicOverride;
     } else if (
       lastStep.selectedIndex !== null &&
@@ -142,7 +134,6 @@ export default function NewCoursePage() {
     ) {
       userMessage = lastStep.options[lastStep.selectedIndex];
     } else {
-      // selectedIndex is null (free-text) or 4 (OtherRow) — both use freeText
       userMessage = lastStep.freeText;
     }
 
@@ -163,7 +154,6 @@ export default function NewCoursePage() {
 
       setSessionId(data.sessionId ?? null);
 
-      // Append new step (without answer yet)
       const newStep: WizardStep = {
         question: data.question ?? "",
         options: data.options ?? [],
@@ -197,7 +187,6 @@ export default function NewCoursePage() {
   const handleContinue = useCallback(async () => {
     if (!canContinue || phase !== "question") return;
 
-    // Save current answer into steps history
     const savedStep: WizardStep = {
       ...steps[currentStep],
       selectedIndex,
@@ -206,7 +195,6 @@ export default function NewCoursePage() {
 
     let finalSteps: WizardStep[];
     if (isQ5) {
-      // Build chip answer as user message and submit
       const chipMessage =
         chips.length > 0
           ? `Topics I want to cover: ${chips.join(", ")}`
@@ -220,11 +208,9 @@ export default function NewCoursePage() {
     setSteps(finalSteps);
     setPhase("exiting");
 
-    // Brief exit animation before loading
     await new Promise((r) => setTimeout(r, EXIT_ANIMATION_MS));
 
     if (isQ5) {
-      // After Q5 — submit and finish
       const lastStep = finalSteps[finalSteps.length - 1];
       const chipMessage = lastStep.freeText;
 
@@ -247,8 +233,6 @@ export default function NewCoursePage() {
         setPhase("question");
       }
     } else {
-      // truncateToTurns = currentStep * 2 handles back-nav edits:
-      // the DB may have more turns than our current position, so we slice before appending
       await fetchNextQuestion(topic, sessionId, finalSteps, currentStep * 2);
     }
   }, [canContinue, phase, steps, currentStep, selectedIndex, freeText, isQ5, chips, topic, sessionId]);
@@ -267,7 +251,6 @@ export default function NewCoursePage() {
     setPhase("exiting");
     await new Promise((r) => setTimeout(r, EXIT_ANIMATION_MS));
 
-    // Restore previous question's state
     setCurrentStep(prevStepIndex);
     setSelectedIndex(prevStep.selectedIndex);
     setFreeText(prevStep.freeText);
@@ -279,10 +262,8 @@ export default function NewCoursePage() {
     setPhase("question");
   }, [currentStep, steps]);
 
-  // Handle answer change after going back (clears forward)
   const handleAnswerChange = useCallback(
     async (newIndex: number | null, newText: string) => {
-      // Detect if this changes the previously recorded answer
       const recorded = steps[currentStep];
       const changed =
         newIndex !== recorded?.selectedIndex || newText !== recorded?.freeText;
@@ -296,7 +277,6 @@ export default function NewCoursePage() {
         setFreeText(newText);
       }
 
-      // If going back and changing answer, the future steps are stale
       if (changed && currentStep < steps.length - 1) {
         setSteps((prev) => prev.slice(0, currentStep + 1));
       }
@@ -304,10 +284,8 @@ export default function NewCoursePage() {
     [currentStep, steps]
   );
 
-  // Keep ref in sync so arrow-key handler always reads fresh value
   useEffect(() => { focusedOptionRef.current = focusedOption; }, [focusedOption]);
 
-  // Global letter key shortcuts
   useEffect(() => {
     if (phase !== "question" || isQ5) return;
 
@@ -331,7 +309,7 @@ export default function NewCoursePage() {
 
       if (e.key === "ArrowDown") {
         e.preventDefault();
-        const max = steps[currentStep]?.options.length ?? 0; // index 4 = OtherRow
+        const max = steps[currentStep]?.options.length ?? 0;
         const next = Math.min(focusedOptionRef.current + 1, max);
         handleAnswerChange(next, next === 4 ? freeText : "");
       }
@@ -349,7 +327,6 @@ export default function NewCoursePage() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [phase, isQ5, steps, currentStep, canContinue, freeText, handleContinue, handleAnswerChange]);
 
-  // ── Chip helpers ───────────────────────────────────────────
   function addChip(value: string) {
     const trimmed = value.trim();
     if (!trimmed || chips.includes(trimmed)) return;
@@ -362,12 +339,12 @@ export default function NewCoursePage() {
     setChips((prev) => prev.filter((c) => c !== chip));
   }
 
-  // ── Render ─────────────────────────────────────────────────
+  // ── Creating state ──────────────────────────────────────────
   if (phase === "creating") {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center gap-4 text-stone-600">
-        <div className="w-8 h-8 rounded-full border-2 border-stone-200 border-t-amber-600 animate-spin" />
-        <p className="text-base font-medium">Creating your personalized course…</p>
+      <div className="min-h-screen bg-[#1A1410] flex flex-col items-center justify-center gap-4">
+        <div className="w-8 h-8 rounded-full border-2 border-stone-700 border-t-amber-600 animate-spin" />
+        <p className="text-sm font-medium text-stone-500">Creating your personalized course…</p>
       </div>
     );
   }
@@ -381,111 +358,96 @@ export default function NewCoursePage() {
       freeText !== steps[currentStep]?.freeText);
 
   return (
-    <div className="flex flex-col min-h-screen bg-stone-50">
-      {/* Header */}
-      <header className="flex items-center justify-between px-4 py-3 border-b border-stone-200 bg-white">
-        <div className="flex items-center gap-3">
-          {currentStep > 0 && phase === "question" ? (
-            <button
-              onClick={handleBack}
-              className="text-sm text-stone-400 hover:text-stone-700 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 rounded"
-              aria-label="Go back to previous question"
-            >
-              ← Back
-            </button>
-          ) : (
-            <span className="text-sm text-stone-400 invisible">← Back</span>
-          )}
-          <p className="text-sm text-stone-500 truncate max-w-[180px] sm:max-w-xs">
-            {toTitleCase(topic)}
-          </p>
-        </div>
+    <div className="min-h-screen bg-[#1A1410] flex flex-col items-center justify-center px-4 py-10 gap-5">
 
-        <div className="flex items-center gap-3">
-          {/* Progress dots */}
-          <div
-            role="status"
-            aria-label={`Question ${questionNumber} of ${TOTAL_QUESTIONS}`}
-            aria-live="polite"
-            className="flex items-center gap-1.5"
-          >
-            {Array.from({ length: TOTAL_QUESTIONS }, (_, i) => (
-              <span
-                key={i}
-                className={`w-2 h-2 rounded-full transition-colors duration-300 ${
-                  i < questionNumber
-                    ? "bg-amber-500"
-                    : "bg-stone-300"
-                }`}
-              />
-            ))}
-          </div>
+      {/* Loading / thinking state — verb shimmer floats on dark bg */}
+      {(phase === "loading" || phase === "exiting") && (
+        <span key={verbIndex} className="verb-shimmer text-xl italic">
+          {LOADING_VERBS[verbIndex]}
+        </span>
+      )}
 
-          {/* Exit */}
-          <button
-            onClick={handleExit}
-            disabled={phase === "exiting"}
-            className="text-sm text-stone-400 hover:text-stone-600 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 rounded disabled:opacity-0 cursor-pointer"
-            aria-label="Exit qualifying session"
-          >
-            Exit
-          </button>
-        </div>
-      </header>
+      {/* Question card */}
+      {phase === "question" && step && (
+        <>
+          <div className="w-full max-w-lg bg-[#FFFDF5] rounded-[14px] shadow-[0_20px_60px_rgba(0,0,0,0.55)] overflow-hidden question-enter">
 
-      {/* Body */}
-      <main className="flex-1 flex flex-col items-center justify-center px-4 py-8">
-        <div className="w-full max-w-lg">
+            {/* Card header: progress + navigation */}
+            <div className="px-6 pt-5 pb-0 flex items-center justify-between">
+              {currentStep > 0 ? (
+                <button
+                  onClick={handleBack}
+                  className="text-sm text-stone-400 hover:text-stone-700 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-700 rounded"
+                  aria-label="Go back to previous question"
+                >
+                  ← Back
+                </button>
+              ) : (
+                <span />
+              )}
 
-          {/* Loading / thinking state */}
-          {(phase === "loading" || phase === "exiting") && (
-            <div className="flex flex-col items-center justify-center gap-3 py-16">
-              <span
-                key={verbIndex}
-                className="verb-shimmer text-xl italic"
-              >
-                {LOADING_VERBS[verbIndex]}
-              </span>
+              <div className="flex items-center gap-3">
+                <div
+                  role="status"
+                  aria-label={`Question ${questionNumber} of ${TOTAL_QUESTIONS}`}
+                  aria-live="polite"
+                  className="flex items-center gap-1.5"
+                >
+                  {Array.from({ length: TOTAL_QUESTIONS }, (_, i) => (
+                    <span
+                      key={i}
+                      className={`w-1.5 h-1.5 rounded-full transition-colors duration-300 ${
+                        i < questionNumber ? "bg-orange-700" : "bg-stone-300"
+                      }`}
+                    />
+                  ))}
+                </div>
+                <button
+                  onClick={handleExit}
+                  className="text-xs text-stone-400 hover:text-stone-600 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-700 rounded cursor-pointer"
+                  aria-label="Exit qualifying session"
+                >
+                  Exit
+                </button>
+              </div>
             </div>
-          )}
 
-          {/* Question state */}
-          {phase === "question" && step && (
-            <div className="question-enter flex flex-col gap-6">
-              {/* Subtitle on Q1 */}
+            {/* Card body */}
+            <div className="px-6 sm:px-8 pt-5 pb-6">
+
+              {/* Topic overline on Q1 */}
               {currentStep === 0 && (
-                <p className="text-sm text-stone-400">
-                  Building your course profile · {TOTAL_QUESTIONS} questions
+                <p className="font-[family-name:var(--font-data)] text-[11px] font-semibold uppercase tracking-widest text-stone-400 mb-4">
+                  {toTitleCase(topic)} · {TOTAL_QUESTIONS} questions
                 </p>
               )}
 
               {/* Question text */}
               {!isQ5 && (
-                <h1 className="text-2xl sm:text-3xl font-bold text-stone-900 leading-snug">
+                <h1 className="font-display text-xl sm:text-[22px] font-semibold text-[#1C1917] leading-snug mb-5">
                   {step.question}
                 </h1>
               )}
 
-              {/* Q5 chip input */}
+              {/* Q5: specific topics chip input */}
               {isQ5 && (
                 <>
-                  <h1 className="text-2xl sm:text-3xl font-bold text-stone-900 leading-snug">
+                  <h1 className="font-display text-xl sm:text-[22px] font-semibold text-[#1C1917] leading-snug mb-5">
                     Any specific topics you want to make sure we cover?
                   </h1>
 
-                  <div className="flex flex-col gap-3">
-                    {/* Chips */}
+                  <div className="flex flex-col gap-3 mb-5">
                     <div className="flex flex-wrap gap-2 min-h-[36px]">
                       {chips.map((chip) => (
                         <span
                           key={chip}
-                          className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-50 border border-amber-300 rounded-full text-sm text-amber-900"
+                          className="inline-flex items-center gap-1.5 px-3 py-1 bg-[#FEF3EC] border border-orange-200 rounded-full text-sm text-orange-900"
                         >
                           {chip}
                           <button
                             onClick={() => removeChip(chip)}
                             aria-label={`Remove ${chip}`}
-                            className="p-1 -m-0.5 text-amber-600 hover:text-amber-800 leading-none"
+                            className="p-1 -m-0.5 text-orange-600 hover:text-orange-800 leading-none"
                           >
                             ×
                           </button>
@@ -493,7 +455,6 @@ export default function NewCoursePage() {
                       ))}
                     </div>
 
-                    {/* Chip input */}
                     <div className="flex gap-2">
                       <input
                         ref={chipInputRef}
@@ -507,7 +468,7 @@ export default function NewCoursePage() {
                           }
                         }}
                         placeholder="Add topic…"
-                        className="flex-1 rounded-lg border border-stone-200 bg-white px-4 py-2.5 text-stone-900 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-amber-500 text-sm"
+                        className="flex-1 rounded-lg border border-stone-200 bg-white px-4 py-2.5 text-stone-900 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-orange-700 text-sm"
                       />
                       <button
                         onClick={() => addChip(chipInput)}
@@ -518,15 +479,12 @@ export default function NewCoursePage() {
                       </button>
                     </div>
 
-                    {/* Skip — shown when no chips have been added */}
                     {chips.length === 0 && (
                       <button
-                        onClick={() => {
-                          setQ5Skipped(!q5Skipped);
-                        }}
+                        onClick={() => setQ5Skipped(!q5Skipped)}
                         className={`self-start text-sm transition-colors cursor-pointer ${
                           q5Skipped
-                            ? "text-amber-600 font-medium"
+                            ? "text-orange-700 font-medium"
                             : "text-stone-400 hover:text-stone-700 underline underline-offset-2 decoration-stone-300 hover:decoration-stone-500"
                         }`}
                       >
@@ -537,75 +495,75 @@ export default function NewCoursePage() {
                 </>
               )}
 
-              {/* A/B/C/D/E options (non-Q5) */}
+              {/* A/B/C/D/↩ options */}
               {!isQ5 && step.options.length > 0 && (
-                <div>
-                  <div
-                    role="radiogroup"
-                    aria-label={step.question}
-                    className="rounded-lg overflow-hidden border border-stone-200"
-                  >
-                    {step.options.map((opt, i) => (
-                      <OptionRow
-                        key={i}
-                        letter={LETTERS[i]}
-                        text={opt}
-                        selected={selectedIndex === i}
-                        focused={focusedOption === i}
-                        dimmed={false}
-                        onSelect={() => handleAnswerChange(i, "")}
-                        onFocus={() => setFocusedOption(i)}
-                        staggerIndex={i}
-                      />
-                    ))}
-                    <OtherRow
-                      selected={selectedIndex === 4}
-                      focused={focusedOption === 4}
-                      onSelect={() => handleAnswerChange(4, freeText)}
-                      onFocus={() => setFocusedOption(4)}
-                      value={freeText}
-                      onChange={(text) => handleAnswerChange(4, text)}
-                      onArrowUp={() => {
-                        const prevIdx = step.options.length - 1;
-                        handleAnswerChange(prevIdx, "");
-                      }}
-                      staggerIndex={step.options.length}
+                <div
+                  role="radiogroup"
+                  aria-label={step.question}
+                  className="rounded-lg overflow-hidden border border-stone-200"
+                >
+                  {step.options.map((opt, i) => (
+                    <OptionRow
+                      key={i}
+                      letter={LETTERS[i]}
+                      text={opt}
+                      selected={selectedIndex === i}
+                      focused={focusedOption === i}
+                      dimmed={false}
+                      onSelect={() => handleAnswerChange(i, "")}
+                      onFocus={() => setFocusedOption(i)}
+                      staggerIndex={i}
                     />
-                  </div>
-
-                  {/* Keyboard hint — desktop only */}
-                  <p className="hidden sm:block mt-2 text-xs text-stone-400">
-                    ↑↓ to navigate · A–E to jump · Enter to continue
-                  </p>
+                  ))}
+                  <OtherRow
+                    selected={selectedIndex === 4}
+                    focused={focusedOption === 4}
+                    onSelect={() => handleAnswerChange(4, freeText)}
+                    onFocus={() => setFocusedOption(4)}
+                    value={freeText}
+                    onChange={(text) => handleAnswerChange(4, text)}
+                    onArrowUp={() => {
+                      const prevIdx = step.options.length - 1;
+                      handleAnswerChange(prevIdx, "");
+                    }}
+                    staggerIndex={step.options.length}
+                  />
                 </div>
               )}
 
-              {/* "Changing this will clear later answers" warning */}
               {isChangingAnswer && (
-                <p className="text-xs text-stone-400 italic -mt-2">
+                <p className="text-xs text-stone-400 italic mt-3">
                   Changing this will clear your later answers.
                 </p>
               )}
 
               {error && (
-                <p className="text-sm text-red-600">{error}</p>
+                <p className="text-sm text-red-600 mt-4">{error}</p>
               )}
 
-              {/* Continue / Finish */}
-              <div className="flex justify-end">
+              {/* Nav hint + Continue */}
+              <div className="flex items-center justify-between mt-6">
+                <span className="hidden sm:block font-[family-name:var(--font-data)] text-[11px] text-[#C9BFB5]">
+                  ↑ ↓ &nbsp;navigate &nbsp;·&nbsp; ↵ &nbsp;select
+                </span>
                 <button
                   ref={continueRef}
                   onClick={handleContinue}
                   disabled={!canContinue}
-                  className="rounded-lg bg-amber-600 px-6 py-3 text-sm font-semibold text-white hover:bg-amber-700 transition-colors disabled:opacity-40 min-h-[44px]"
+                  className="ml-auto rounded-lg bg-orange-700 px-6 py-2.5 text-sm font-semibold text-white hover:bg-orange-800 transition-colors disabled:opacity-40 min-h-[40px] cursor-pointer disabled:cursor-not-allowed"
                 >
                   {isQ5 ? "Finish →" : "Continue →"}
                 </button>
               </div>
             </div>
-          )}
-        </div>
-      </main>
+          </div>
+
+          {/* Wordmark below card */}
+          <p className="font-[family-name:var(--font-data)] text-[11px] font-semibold tracking-widest uppercase text-[#C9BFB5]">
+            Pomelo
+          </p>
+        </>
+      )}
     </div>
   );
 }

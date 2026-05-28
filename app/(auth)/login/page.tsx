@@ -4,7 +4,7 @@ export default function LoginPage() {
   return (
     <main className="flex min-h-screen items-center justify-center px-4">
       <div className="max-w-sm w-full text-center">
-        <p className="text-xs font-semibold tracking-widest text-amber-600 uppercase mb-8">
+        <p className="text-xs font-semibold tracking-widest text-orange-700 uppercase mb-8">
           Pomelo
         </p>
         <h1 className="text-2xl font-semibold text-stone-900 mb-2">

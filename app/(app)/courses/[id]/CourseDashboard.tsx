@@ -58,17 +58,17 @@ export function CourseDashboard({
         {/* Reveal header */}
         {headerVisible && (
           <div
-            className="mb-6 rounded-lg bg-amber-50 border border-amber-100 px-4 py-3 transition-opacity duration-700"
+            className="mb-6 rounded-lg bg-[#FEF3EC] border border-orange-100 px-4 py-3 transition-opacity duration-700"
             style={{ opacity: headerVisible ? 1 : 0 }}
           >
-            <p className="text-sm font-medium text-amber-700">
+            <p className="text-sm font-medium text-orange-700">
               Your personalized course is ready.
             </p>
           </div>
         )}
 
         {/* Course header */}
-        <h1 className="text-3xl font-bold text-stone-900 mb-1">{toTitleCase(course.topic)}</h1>
+        <h1 className="font-display text-3xl font-bold text-stone-900 mb-1">{toTitleCase(course.topic)}</h1>
         <p className="text-sm text-stone-500 mb-6">
           {chapters.length} chapters · ~{course.totalMinutes} min total
         </p>
@@ -83,7 +83,7 @@ export function CourseDashboard({
             </span>
           </span>
           {streak > 0 && (
-            <span className="flex items-center gap-1 font-semibold text-amber-600">
+            <span className="flex items-center gap-1 font-semibold text-orange-700">
               🔥 {streak} day{streak !== 1 ? "s" : ""} streak
             </span>
           )}
@@ -135,7 +135,7 @@ export function CourseDashboard({
                   ) : chapter.status === "failed" ? (
                     <span className="text-xs text-red-500 font-medium">Retry</span>
                   ) : (
-                    <span className="text-xs text-amber-600 font-medium group-hover:underline">
+                    <span className="text-xs text-orange-700 font-medium group-hover:underline">
                       Open →
                     </span>
                   )}

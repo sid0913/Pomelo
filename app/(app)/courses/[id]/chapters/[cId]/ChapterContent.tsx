@@ -94,14 +94,14 @@ function ImageCardComponent({ card }: { card: ImageCard }) {
 }
 
 const CALLOUT_BOX: Record<string, string> = {
-  "Key insight": "bg-amber-50 border-l-4 border-amber-500",
+  "Key insight": "bg-[#FEF3EC] border-l-4 border-orange-600",
   "Definition":  "bg-stone-100 border-l-4 border-stone-400",
   "Warning":     "bg-red-50 border-l-4 border-red-400",
   "Example":     "bg-blue-50 border-l-4 border-blue-400",
 };
 
 const CALLOUT_BADGE: Record<string, string> = {
-  "Key insight": "bg-amber-100 text-amber-800",
+  "Key insight": "bg-[#FEF3EC] text-orange-700",
   "Definition":  "bg-stone-200 text-stone-700",
   "Warning":     "bg-red-100 text-red-700",
   "Example":     "bg-blue-100 text-blue-700",
@@ -168,7 +168,7 @@ function ChapterCTA({ courseId, next }: { courseId: string; next: { id: string; 
       {next ? (
         <Link
           href={`/courses/${courseId}/chapters/${next.id}`}
-          className="inline-block rounded-lg bg-amber-600 px-6 py-3 text-white font-semibold hover:bg-amber-700 transition-colors"
+          className="inline-block rounded-lg bg-orange-700 px-6 py-3 text-white font-semibold hover:bg-orange-800 transition-colors"
         >
           Next chapter →
         </Link>
@@ -179,7 +179,7 @@ function ChapterCTA({ courseId, next }: { courseId: string; next: { id: string; 
           </p>
           <Link
             href={`/courses/${courseId}`}
-            className="text-sm text-amber-600 hover:underline"
+            className="text-sm text-orange-700 hover:underline"
           >
             ← Back to course
           </Link>

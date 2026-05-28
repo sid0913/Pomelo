@@ -1,10 +1,24 @@
 import type { Metadata, Viewport } from "next";
-import { Plus_Jakarta_Sans } from "next/font/google";
+import { Fraunces, Outfit, Geist_Mono } from "next/font/google";
 import "./globals.css";
 
-const jakarta = Plus_Jakarta_Sans({
-  variable: "--font-sans",
+const fraunces = Fraunces({
+  variable: "--font-display",
   subsets: ["latin"],
+  axes: ["opsz"],
+  display: "swap",
+});
+
+const outfit = Outfit({
+  variable: "--font-body",
+  subsets: ["latin"],
+  display: "swap",
+});
+
+const geistMono = Geist_Mono({
+  variable: "--font-data",
+  subsets: ["latin"],
+  weight: ["400", "500"],
   display: "swap",
 });
 
@@ -23,7 +37,10 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" className={`${jakarta.variable} h-full`}>
+    <html
+      lang="en"
+      className={`${fraunces.variable} ${outfit.variable} ${geistMono.variable} h-full`}
+    >
       <body className="min-h-full flex flex-col">{children}</body>
     </html>
   );
