@@ -11,6 +11,12 @@
 - [ ] Server-side session cleanup: call API to mark `qualifying_session` as `status: "abandoned"` on exit, to prevent unbounded DB growth from orphaned sessions
 - [ ] Exit confirmation dialog: warn user before discarding mid-wizard progress (UX decision — depends on whether resume flow is added)
 
+## Auth flow hardening (deferred from v0.4.0.0 adversarial review)
+
+- [ ] Sign-out error feedback: `SignOutButton.handleSignOut` ignores `{error}` returned by `supabase.auth.signOut()` — add error check and show inline error text if signOut fails
+- [ ] Q5 `data.done === false` case: `handleContinue` in qualifying wizard has no `else` branch when the API returns `done: false` — UI freezes in "loading" phase with no recovery path
+- [ ] Stale `sessionId` on Q5 re-answers: the Q5 final submission does not pass `truncateToTurns`, so if the user edited a prior answer the course is generated from inconsistent conversation history
+
 ## Hardening (deferred from adversarial review)
 
 - [ ] Clamp `truncateToTurns` in the API route: validate `0 ≤ truncateToTurns ≤ session.turns.length` to prevent negative-slice edge cases

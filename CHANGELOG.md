@@ -2,6 +2,16 @@
 
 All notable changes to Pomelo are documented here.
 
+## [0.4.0.0] — 2026-05-28
+
+### Added
+- **Returning user sign-in** — landing page now shows "Already have an account? Sign in →" below the Get Started button. Clicking it opens a "Welcome back" email-only form (no topic prompt). After clicking the magic link, returning users land on `/courses` (their course dashboard) instead of the new-course wizard.
+- **Sign-out button** — a fixed top-right "Sign out" button appears on all authenticated pages (courses, chapters). Calls `supabase.auth.signOut()` and redirects to the landing page.
+- **Auth flow tests** — 15 new tests for `LandingPage` (returning user step, OTP redirect logic, sent-step text adaptation) and `SignOutButton` (render, signOut call, router redirect). Total: 103 passing.
+
+### Fixed
+- Auth callback redirect for users with no pending topic: previously sent to `/courses/new` (the new-course wizard); now correctly sends to `/courses` (the course dashboard).
+
 ## [0.3.0] — 2026-05-27
 
 ### Added
