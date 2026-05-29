@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import NewCoursePage from "@/app/(app)/courses/new/page";
 
 const mockPush = vi.fn();
@@ -27,19 +27,25 @@ Object.defineProperty(globalThis, "localStorage", {
   writable: true,
 });
 
-// Keep the component in "loading" phase (fetch never resolves) so the
-// Exit button is visible without needing to drive the full wizard flow.
-function frozenFetch() {
-  vi.spyOn(global, "fetch").mockImplementation(
-    () => new Promise(() => {})
-  );
+// Return a single question so the component transitions to "question" phase,
+// making the Exit button visible. The Exit button lives inside the question card.
+function questionFetch() {
+  vi.spyOn(global, "fetch").mockResolvedValue({
+    ok: true,
+    json: async () => ({
+      done: false,
+      sessionId: "test-session-123",
+      question: "What is your current knowledge level?",
+      options: ["Beginner", "Intermediate", "Advanced", "Expert"],
+    }),
+  } as Response);
 }
 
 describe("NewCoursePage — Exit button", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     localStorageMock.setItem("pomelo_pending_topic", "machine learning");
-    frozenFetch();
+    questionFetch();
   });
 
   afterEach(() => {
@@ -47,25 +53,25 @@ describe("NewCoursePage — Exit button", () => {
     vi.restoreAllMocks();
   });
 
-  it("renders the Exit button", () => {
+  it("renders the Exit button", async () => {
     render(<NewCoursePage />);
     expect(
-      screen.getByRole("button", { name: /exit qualifying session/i })
+      await screen.findByRole("button", { name: /exit qualifying session/i })
     ).toBeInTheDocument();
   });
 
-  it("clears pomelo_pending_topic from localStorage on exit", () => {
+  it("clears pomelo_pending_topic from localStorage on exit", async () => {
     render(<NewCoursePage />);
     fireEvent.click(
-      screen.getByRole("button", { name: /exit qualifying session/i })
+      await screen.findByRole("button", { name: /exit qualifying session/i })
     );
     expect(localStorageMock.getItem("pomelo_pending_topic")).toBeNull();
   });
 
-  it("navigates to /courses on exit", () => {
+  it("navigates to /courses on exit", async () => {
     render(<NewCoursePage />);
     fireEvent.click(
-      screen.getByRole("button", { name: /exit qualifying session/i })
+      await screen.findByRole("button", { name: /exit qualifying session/i })
     );
     expect(mockPush).toHaveBeenCalledWith("/courses");
     expect(mockPush).toHaveBeenCalledTimes(1);
