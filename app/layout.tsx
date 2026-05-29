@@ -25,7 +25,6 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Pomelo — Personalized AI Courses",
   description: "The course that skips what you already know.",
-  icons: { icon: "/favicon.ico" },
 };
 
 export const viewport: Viewport = {

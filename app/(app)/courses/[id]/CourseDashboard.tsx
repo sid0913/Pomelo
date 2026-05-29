@@ -51,7 +51,7 @@ export function CourseDashboard({
   const pct = chapters.length > 0 ? Math.round((completedTotal / chapters.length) * 100) : 0;
 
   return (
-    <div className="min-h-screen bg-stone-50">
+    <div className="bg-stone-50 min-h-full">
       <div className="max-w-2xl mx-auto px-4 py-10">
 
         {/* Back link */}

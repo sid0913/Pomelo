@@ -13,9 +13,9 @@
 
 ## Auth flow hardening (deferred from v0.4.0.0 adversarial review)
 
-- [ ] Sign-out error feedback: `SignOutButton.handleSignOut` ignores `{error}` returned by `supabase.auth.signOut()` — add error check and show inline error text if signOut fails
-- [ ] Q5 `data.done === false` case: `handleContinue` in qualifying wizard has no `else` branch when the API returns `done: false` — UI freezes in "loading" phase with no recovery path
-- [ ] Stale `sessionId` on Q5 re-answers: the Q5 final submission does not pass `truncateToTurns`, so if the user edited a prior answer the course is generated from inconsistent conversation history
+- [x] Sign-out error feedback — resolved in feat/design-overhaul (T15)
+- [x] Q5 `data.done === false` case — resolved in feat/design-overhaul (T14: else branch added)
+- [x] Stale `sessionId` on Q5 re-answers — resolved in feat/design-overhaul (T13: Back button removed, stale history impossible)
 
 ## Hardening (deferred from adversarial review)
 
@@ -23,7 +23,16 @@
 - [ ] Add Zod refinement on `finish_qualifying` tool output (chapters array non-empty, `estimated_minutes` > 0) before inserting to DB
 - [ ] Double-submit guard on qualifying wizard: disable form / set in-flight flag so rapid taps can't fire two concurrent requests
 - [ ] Orphaned course cleanup: if `chapters.insert` fails after `courses.insert`, roll back or queue a cleanup job
-- [ ] Stale chips on back-to-Q5: when user navigates back to Q5 via back button, existing chips reflect old session state — decide whether to clear or restore
+- [x] Stale chips on back-to-Q5 — resolved in feat/design-overhaul (T13: Back button removed)
+
+## Mobile design (deferred from /plan-design-review — feat/design-overhaul)
+
+- [ ] **Mobile navigation**: Bottom tab bar below 1024px (lg), sidebar at lg+. Items: My Courses + Account (sign out). Active state: orange-700. This branch removed the sidebar on mobile with no replacement — ship `feat/mobile-nav` immediately after design overhaul lands.
+  - Spec: `AppShell` sidebar `hidden lg:flex`, bottom bar `flex lg:hidden`, 48px height, `role="navigation" aria-label="Mobile navigation"`
+  - **Note:** AppShell ships with `hidden md:flex` as a temporary bridge. The mobile-nav PR must change this to `hidden lg:flex` when adding the bottom tab bar, or tablets (768-1023px) will lose navigation.
+- [ ] **Mobile chapter chat**: Floating "Ask →" button fixed bottom-right of chapter reading area, visible below lg. Taps open a Shadcn `Sheet` (side=bottom) at 60% viewport height. Swipe down or tap outside to close.
+  - Spec: orange-700 button, sheet contains full `ChapterChat` component, `aria-label="Open chapter chat"`
+- [ ] **Page cross-fades**: View Transitions API for 150ms opacity transition between routes (DESIGN.md spec). Add `<ViewTransition>` wrapper in `app/layout.tsx`. Degrades gracefully on Safari <18 (instant cut).
 
 ## Visual learning (deferred from /autoplan visual-learning review)
 

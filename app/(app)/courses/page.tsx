@@ -2,7 +2,32 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { NewCourseForm } from "./NewCourseForm";
+import { AppShell } from "@/app/(app)/AppShell";
 import { toTitleCase } from "@/lib/format";
+
+function getGreeting(): string {
+  const h = new Date().getUTCHours();
+  if (h >= 5 && h < 12) return "Good morning";
+  if (h >= 12 && h < 18) return "Good afternoon";
+  return "Good evening";
+}
+
+function computeStreak(completedDates: string[]): number {
+  if (completedDates.length === 0) return 0;
+  const today = new Date().toISOString().slice(0, 10);
+  const dayBefore = new Date(Date.now() - 86_400_000).toISOString().slice(0, 10);
+  const activeDays = new Set(completedDates.map((d) => d.slice(0, 10)));
+  if (!activeDays.has(today) && !activeDays.has(dayBefore)) return 0;
+  let streak = 0;
+  let cursor = activeDays.has(today) ? new Date(today) : new Date(dayBefore);
+  while (true) {
+    const dateStr = cursor.toISOString().slice(0, 10);
+    if (!activeDays.has(dateStr)) break;
+    streak++;
+    cursor = new Date(cursor.getTime() - 86_400_000);
+  }
+  return streak;
+}
 
 export default async function CoursesPage() {
   const supabase = await createClient();
@@ -27,7 +52,8 @@ export default async function CoursesPage() {
         .in("course_id", courseIds)
     : { data: [] };
 
-  const chapterIds = (allChapters ?? []).map((c) => c.id);
+  const chapters = allChapters ?? [];
+  const chapterIds = chapters.map((c) => c.id);
 
   const { data: allProgress } = chapterIds.length > 0
     ? await serviceClient
@@ -38,15 +64,17 @@ export default async function CoursesPage() {
         .not("completed_at", "is", null)
     : { data: [] };
 
-  const chaptersByCourse = (allChapters ?? []).reduce<Record<string, number>>(
+  const progressRows = allProgress ?? [];
+  const today = new Date().toISOString().slice(0, 10);
+  const completedChapterIds = new Set(progressRows.map((p) => p.chapter_id));
+  const doneToday = progressRows.filter((p) => p.completed_at?.slice(0, 10) === today).length;
+  const streak = computeStreak(progressRows.map((p) => p.completed_at as string));
+
+  const chaptersByCourse = chapters.reduce<Record<string, number>>(
     (acc, c) => ({ ...acc, [c.course_id]: (acc[c.course_id] ?? 0) + 1 }),
     {}
   );
-
-  const completedChapterIds = new Set(
-    (allProgress ?? []).map((p) => p.chapter_id)
-  );
-  const completedByCourse = (allChapters ?? []).reduce<Record<string, number>>(
+  const completedByCourse = chapters.reduce<Record<string, number>>(
     (acc, c) => ({
       ...acc,
       [c.course_id]: (acc[c.course_id] ?? 0) + (completedChapterIds.has(c.id) ? 1 : 0),
@@ -54,24 +82,50 @@ export default async function CoursesPage() {
     {}
   );
 
+  const displayName =
+    user.user_metadata?.full_name ??
+    user.email?.split("@")[0] ??
+    "";
+
   return (
-    <div className="min-h-screen bg-stone-50">
-      <div className="max-w-2xl mx-auto px-4 py-10">
+    <AppShell user={user} activePath="/courses">
+      <div className="max-w-2xl mx-auto px-6 py-10">
 
-        {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-baseline justify-between mb-6">
-            <h1 className="font-display text-[28px] font-bold text-stone-900">
-              My courses
-            </h1>
-            {courseList.length > 0 && (
-              <span className="font-[family-name:var(--font-data)] text-xs text-stone-400">
-                {courseList.length} course{courseList.length !== 1 ? "s" : ""}
-              </span>
-            )}
+        {/* Greeting */}
+        <h1 className="font-display text-[32px] font-bold text-stone-900 mb-6">
+          {getGreeting()}{displayName ? `, ${displayName}` : ""}.
+        </h1>
+
+        {/* Stat cards */}
+        <div className="grid grid-cols-3 gap-3 mb-8">
+          <div className="rounded-xl bg-white border border-stone-200 px-4 py-4 text-center">
+            <p className="font-[family-name:var(--font-data)] text-[26px] font-medium text-orange-700 leading-none mb-1 tabular-nums">
+              {streak}
+            </p>
+            <p className="font-[family-name:var(--font-data)] text-[10px] uppercase tracking-widest text-stone-400">
+              day streak
+            </p>
           </div>
+          <div className="rounded-xl bg-white border border-stone-200 px-4 py-4 text-center">
+            <p className="font-[family-name:var(--font-data)] text-[26px] font-medium text-stone-900 leading-none mb-1 tabular-nums">
+              {doneToday}
+            </p>
+            <p className="font-[family-name:var(--font-data)] text-[10px] uppercase tracking-widest text-stone-400">
+              done today
+            </p>
+          </div>
+          <div className="rounded-xl bg-white border border-stone-200 px-4 py-4 text-center">
+            <p className="font-[family-name:var(--font-data)] text-[26px] font-medium text-stone-900 leading-none mb-1 tabular-nums">
+              {courseList.length}
+            </p>
+            <p className="font-[family-name:var(--font-data)] text-[10px] uppercase tracking-widest text-stone-400">
+              courses
+            </p>
+          </div>
+        </div>
 
-          {/* New course form */}
+        {/* New course form */}
+        <div className="mb-8">
           <NewCourseForm />
         </div>
 
@@ -99,7 +153,7 @@ export default async function CoursesPage() {
                   className="group flex items-center gap-4 rounded-xl bg-white border border-stone-200 hover:border-orange-200 hover:shadow-sm px-5 py-4 transition-all"
                 >
                   <div className="flex-1 min-w-0">
-                    <h2 className="font-display text-[18px] font-semibold text-stone-900 leading-snug truncate group-hover:text-orange-700 transition-colors mb-1">
+                    <h2 className="font-display text-[17px] font-semibold text-stone-900 leading-snug truncate group-hover:text-orange-700 transition-colors mb-1.5">
                       {toTitleCase(course.topic)}
                     </h2>
                     <div className="flex items-center gap-3">
@@ -123,6 +177,6 @@ export default async function CoursesPage() {
           </div>
         )}
       </div>
-    </div>
+    </AppShell>
   );
 }

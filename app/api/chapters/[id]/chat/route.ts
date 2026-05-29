@@ -138,10 +138,11 @@ export async function POST(req: NextRequest, { params }: Params) {
     return NextResponse.json({ error: "AI service error" }, { status: 500 });
   }
 
+  const CHAT_HISTORY_CAP = 100;
   const finalMessages: Message[] = [
     ...updatedMessages,
     { role: "assistant", content: assistantText, timestamp: new Date().toISOString() },
-  ];
+  ].slice(-CHAT_HISTORY_CAP);
 
   await serviceClient
     .from("chapter_chats")

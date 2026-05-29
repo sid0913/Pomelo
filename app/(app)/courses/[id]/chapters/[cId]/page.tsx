@@ -104,17 +104,20 @@ export default async function ChapterPage({ params }: Props) {
                     href={`/courses/${courseId}/chapters/${ch.id}`}
                     className={`flex items-start gap-2.5 px-2 py-2 rounded-lg text-[13px] leading-snug transition-colors ${
                       isActive
-                        ? "bg-[#FEF3EC] text-orange-700 font-medium"
+                        ? "bg-[#FEF3EC] text-orange-700 font-semibold border-l-[3px] border-orange-700 rounded-l-none pl-[5px]"
+                        : isDone
+                        ? "text-stone-400 hover:bg-stone-50 hover:text-stone-600"
                         : "text-stone-500 hover:bg-stone-50 hover:text-stone-800"
                     }`}
                   >
                     <span className="font-[family-name:var(--font-data)] text-[10px] text-stone-400 w-4 shrink-0 text-right mt-0.5">
-                      {i + 1}
+                      {isDone && !isActive ? (
+                        <span className="text-green-600">✓</span>
+                      ) : (
+                        i + 1
+                      )}
                     </span>
                     <span className="flex-1 min-w-0">{ch.title}</span>
-                    {isDone && !isActive && (
-                      <span className="text-green-600 text-[10px] shrink-0 mt-0.5">✓</span>
-                    )}
                   </Link>
                 );
               })}
@@ -133,11 +136,20 @@ export default async function ChapterPage({ params }: Props) {
 
             {/* Chapter title */}
             <h1
-              className="font-display text-[32px] font-semibold text-stone-900 leading-snug mb-8"
+              className="font-display text-[32px] font-semibold text-stone-900 leading-snug mb-3"
               tabIndex={-1}
             >
               {chapter.title}
             </h1>
+
+            {/* Meta row */}
+            <div className="flex items-center gap-3 font-[family-name:var(--font-data)] text-[12px] text-stone-400 mb-6">
+              <span>~{chapter.estimated_minutes} min read</span>
+              <span className="text-stone-200">·</span>
+              <span>Chapter {chapter.chapter_index + 1} of {allChapters.length}</span>
+            </div>
+
+            <hr className="border-stone-200 mb-8" />
 
             <ChapterContent
               chapterId={chapterId}

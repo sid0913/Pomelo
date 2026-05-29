@@ -1,11 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 
 export function NewCourseForm() {
   const [topic, setTopic] = useState("");
   const router = useRouter();
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    inputRef.current?.focus();
+  }, []);
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -17,6 +22,7 @@ export function NewCourseForm() {
   return (
     <form onSubmit={handleSubmit} className="flex gap-2">
       <input
+        ref={inputRef}
         type="text"
         value={topic}
         onChange={(e) => setTopic(e.target.value)}
@@ -25,7 +31,6 @@ export function NewCourseForm() {
         required
         minLength={2}
         maxLength={200}
-        autoFocus
       />
       <button
         type="submit"

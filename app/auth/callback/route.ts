@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 export async function GET(req: NextRequest) {
   const { searchParams, origin } = req.nextUrl;
   const code = searchParams.get("code");
+  const next = searchParams.get("next") ?? "";
   const topic = searchParams.get("topic") ?? "";
 
   if (!code) {
@@ -16,6 +17,10 @@ export async function GET(req: NextRequest) {
   if (error) {
     console.error("Auth callback error:", error);
     return NextResponse.redirect(`${origin}/?error=auth_failed`);
+  }
+
+  if (next) {
+    return NextResponse.redirect(`${origin}${next}`);
   }
 
   const redirectUrl = topic
