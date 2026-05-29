@@ -45,11 +45,7 @@ export function LandingPage() {
         email: email.trim(),
         options: { emailRedirectTo: redirectTo },
       });
-
-      if (error) {
-        setErrorMsg("Something went wrong. Please try again.");
-        return;
-      }
+      if (error) { setErrorMsg("Something went wrong. Please try again."); return; }
     } catch {
       setErrorMsg("Something went wrong. Please try again.");
       return;
@@ -61,42 +57,60 @@ export function LandingPage() {
   }
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center px-4">
-      <div className="w-full max-w-md">
-        <p className="text-center text-xs font-semibold tracking-widest text-orange-700 uppercase mb-10">
+    <main className="flex min-h-screen flex-col items-center justify-center px-4 py-16">
+      <div className="w-full max-w-lg">
+
+        {/* Wordmark */}
+        <p className="text-center font-[family-name:var(--font-data)] text-[11px] font-semibold tracking-widest text-orange-700 uppercase mb-12">
           Pomelo
         </p>
 
+        {/* ── Topic step ─────────────────────────────────────────── */}
         {step === "topic" && (
-          <form onSubmit={handleTopicSubmit} className="step-fade-enter flex flex-col gap-4">
-            <h1 className="font-display text-center text-4xl font-bold text-stone-900 leading-tight mb-2">
-              The course that skips what you already know.
+          <form onSubmit={handleTopicSubmit} className="step-fade-enter flex flex-col gap-6">
+            {/* Badge */}
+            <div className="flex justify-center">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#FEF3EC] text-[11px] font-semibold text-orange-700 tracking-wide">
+                ✦ AI-personalized learning
+              </span>
+            </div>
+
+            {/* Headline */}
+            <h1 className="font-display text-[48px] sm:text-[52px] font-bold text-stone-900 leading-[1.1] text-center">
+              The course that skips what you{" "}
+              <span className="italic text-orange-700">already know.</span>
             </h1>
-            <p className="text-center text-stone-500 mb-2">
-              What do you want to learn?
+
+            {/* Subheading */}
+            <p className="text-center text-stone-500 text-[17px] leading-[1.65]">
+              Tell us what you want to learn. Five questions about what you already know.
+              Then a course built around exactly your gap — not someone else&apos;s.
             </p>
-            <label htmlFor="topic" className="sr-only">
-              Topic
-            </label>
-            <input
-              id="topic"
-              ref={topicRef}
-              type="text"
-              value={topic}
-              onChange={(e) => setTopic(e.target.value)}
-              placeholder="e.g., molecular biology, machine learning, financial modeling"
-              className="w-full rounded-lg border border-stone-200 bg-white px-4 py-3 text-stone-900 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-orange-700 text-base"
-              required
-              minLength={2}
-              maxLength={200}
-            />
-            <button
-              type="submit"
-              className="w-full rounded-lg bg-orange-700 px-4 py-3 text-white font-semibold hover:bg-orange-800 transition-colors disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
-              disabled={!topic.trim()}
-            >
-              Get started →
-            </button>
+
+            {/* Input + CTA */}
+            <div className="flex flex-col gap-3 mt-2">
+              <label htmlFor="topic" className="sr-only">What do you want to learn?</label>
+              <input
+                id="topic"
+                ref={topicRef}
+                type="text"
+                value={topic}
+                onChange={(e) => setTopic(e.target.value)}
+                placeholder="e.g., molecular biology, machine learning, options trading…"
+                className="w-full rounded-lg border border-stone-200 bg-white px-4 py-3.5 text-stone-900 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-orange-700 text-base"
+                required
+                minLength={2}
+                maxLength={200}
+              />
+              <button
+                type="submit"
+                className="w-full rounded-lg bg-orange-700 px-4 py-3.5 text-white font-semibold hover:bg-orange-800 transition-colors disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed text-base"
+                disabled={!topic.trim()}
+              >
+                Get started →
+              </button>
+            </div>
+
             <button
               type="button"
               onClick={() => setStep("returning")}
@@ -107,31 +121,37 @@ export function LandingPage() {
           </form>
         )}
 
+        {/* ── Email step ─────────────────────────────────────────── */}
         {step === "email" && (
-          <form onSubmit={handleEmailSubmit} className="step-fade-enter flex flex-col gap-4">
+          <form onSubmit={handleEmailSubmit} className="step-fade-enter flex flex-col gap-5">
             <button
               type="button"
               onClick={() => setStep("topic")}
-              className="text-sm text-stone-400 hover:text-stone-600 self-start mb-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-700 rounded"
+              className="text-sm text-stone-400 hover:text-stone-600 self-start transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-700 rounded"
             >
               ← Back
             </button>
-            <div className="rounded-lg bg-[#FEF3EC] border border-orange-100 px-4 py-3">
-              <p className="text-sm text-stone-600">
-                <span className="font-medium text-stone-800">Your topic:</span>{" "}
+
+            {/* Topic confirmation */}
+            <div className="rounded-xl bg-[#FEF3EC] border border-orange-100 px-5 py-4">
+              <p className="font-[family-name:var(--font-data)] text-[11px] font-semibold uppercase tracking-widest text-orange-700 mb-1">
+                Your topic
+              </p>
+              <p className="font-display text-lg font-semibold text-stone-900 italic">
                 {topic}
               </p>
             </div>
-            <p className="text-stone-700 font-medium">
-              Enter your email — we&apos;ll send you a sign-in link.
-            </p>
-            <p className="text-sm text-stone-400 -mt-2">
-              Your topic is saved. You&apos;ll start building your course right
-              after clicking the link.
-            </p>
-            <label htmlFor="email" className="sr-only">
-              Email address
-            </label>
+
+            <div>
+              <h2 className="font-display text-2xl font-semibold text-stone-900 mb-1">
+                One more step
+              </h2>
+              <p className="text-stone-500 text-[15px]">
+                Enter your email — we&apos;ll send a sign-in link. Your course starts the moment you click it.
+              </p>
+            </div>
+
+            <label htmlFor="email" className="sr-only">Email address</label>
             <input
               id="email"
               ref={emailRef}
@@ -140,13 +160,13 @@ export function LandingPage() {
               onChange={(e) => setEmail(e.target.value)}
               onBlur={(e) => setEmail(e.target.value)}
               placeholder="you@example.com"
-              className="w-full rounded-lg border border-stone-200 bg-white px-4 py-3 text-stone-900 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-orange-700 text-base"
+              className="w-full rounded-lg border border-stone-200 bg-white px-4 py-3.5 text-stone-900 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-orange-700 text-base"
               required
             />
-            {errorMsg && <p className="text-red-600 text-sm">{errorMsg}</p>}
+            {errorMsg && <p className="text-red-600 text-sm -mt-2">{errorMsg}</p>}
             <button
               type="submit"
-              className="w-full rounded-lg bg-orange-700 px-4 py-3 text-white font-semibold hover:bg-orange-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+              className="w-full rounded-lg bg-orange-700 px-4 py-3.5 text-white font-semibold hover:bg-orange-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer text-base"
               disabled={loading || !email.trim()}
             >
               {loading ? "Sending…" : "Send sign-in link →"}
@@ -154,24 +174,25 @@ export function LandingPage() {
           </form>
         )}
 
+        {/* ── Returning user step ─────────────────────────────────── */}
         {step === "returning" && (
-          <form onSubmit={handleEmailSubmit} className="step-fade-enter flex flex-col gap-4">
+          <form onSubmit={handleEmailSubmit} className="step-fade-enter flex flex-col gap-5">
             <button
               type="button"
               onClick={() => setStep("topic")}
-              className="text-sm text-stone-400 hover:text-stone-600 self-start mb-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-700 rounded cursor-pointer"
+              className="text-sm text-stone-400 hover:text-stone-600 self-start transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-700 rounded cursor-pointer"
             >
               ← Back
             </button>
-            <h2 className="font-display text-2xl font-semibold text-stone-900">
-              Welcome back
-            </h2>
-            <p className="text-stone-500 -mt-2">
-              Enter your email and we&apos;ll send you a sign-in link.
-            </p>
-            <label htmlFor="returning-email" className="sr-only">
-              Email address
-            </label>
+            <div>
+              <h2 className="font-display text-3xl font-semibold text-stone-900 mb-2">
+                Welcome back
+              </h2>
+              <p className="text-stone-500 text-[15px]">
+                Enter your email and we&apos;ll send a sign-in link.
+              </p>
+            </div>
+            <label htmlFor="returning-email" className="sr-only">Email address</label>
             <input
               id="returning-email"
               ref={emailRef}
@@ -180,13 +201,13 @@ export function LandingPage() {
               onChange={(e) => setEmail(e.target.value)}
               onBlur={(e) => setEmail(e.target.value)}
               placeholder="you@example.com"
-              className="w-full rounded-lg border border-stone-200 bg-white px-4 py-3 text-stone-900 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-orange-700 text-base"
+              className="w-full rounded-lg border border-stone-200 bg-white px-4 py-3.5 text-stone-900 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-orange-700 text-base"
               required
             />
-            {errorMsg && <p className="text-red-600 text-sm">{errorMsg}</p>}
+            {errorMsg && <p className="text-red-600 text-sm -mt-2">{errorMsg}</p>}
             <button
               type="submit"
-              className="w-full rounded-lg bg-orange-700 px-4 py-3 text-white font-semibold hover:bg-orange-800 transition-colors disabled:opacity-50"
+              className="w-full rounded-lg bg-orange-700 px-4 py-3.5 text-white font-semibold hover:bg-orange-800 transition-colors disabled:opacity-50 text-base"
               disabled={loading || !email.trim()}
             >
               {loading ? "Sending…" : "Send sign-in link →"}
@@ -194,24 +215,28 @@ export function LandingPage() {
           </form>
         )}
 
+        {/* ── Sent step ──────────────────────────────────────────── */}
         {step === "sent" && (
           <div className="step-fade-enter text-center">
-            <h2 className="font-display text-2xl font-semibold text-stone-900 mb-2">
+            <div className="w-12 h-12 rounded-full bg-[#F2FAF5] flex items-center justify-center mx-auto mb-6">
+              <span className="text-green-700 text-xl">✓</span>
+            </div>
+            <h2 className="font-display text-3xl font-semibold text-stone-900 mb-3">
               Check your inbox
             </h2>
-            <p className="text-stone-500 leading-relaxed">
-              We sent a sign-in link to{" "}
+            <p className="text-stone-500 text-[17px] leading-relaxed max-w-sm mx-auto">
+              We sent a link to{" "}
               <span className="font-medium text-stone-700">{email}</span>.{" "}
               {topic.trim() ? (
                 <>
                   Click it to start building your personalized{" "}
-                  <span className="font-medium text-stone-700">{topic}</span> course.
+                  <span className="font-medium text-stone-700 italic font-display">{topic}</span> course.
                 </>
               ) : (
-                "Click it to sign in to your account."
+                "Click it to sign in."
               )}
             </p>
-            <p className="mt-4 text-sm text-stone-400">
+            <p className="mt-5 text-sm text-stone-400">
               Didn&apos;t get it? Check your spam folder.
             </p>
           </div>

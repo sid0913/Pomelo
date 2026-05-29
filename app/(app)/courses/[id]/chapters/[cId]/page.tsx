@@ -46,6 +46,16 @@ export default async function ChapterPage({ params }: Props) {
   const prev = idx > 0 ? allChapters[idx - 1] : null;
   const next = idx < allChapters.length - 1 ? allChapters[idx + 1] : null;
 
+  // Fetch completion status for TOC sidebar
+  const { data: progressData } = await serviceClient
+    .from("chapter_progress")
+    .select("chapter_id")
+    .eq("user_id", user.id)
+    .in("chapter_id", allChapters.map((c) => c.id))
+    .not("completed_at", "is", null);
+
+  const completedIds = new Set((progressData ?? []).map((p) => p.chapter_id));
+
   const coursesData = chapter.courses;
   const course = (Array.isArray(coursesData) ? coursesData[0] : coursesData) as {
     id: string;
@@ -55,31 +65,77 @@ export default async function ChapterPage({ params }: Props) {
 
   return (
     <div className="h-screen flex flex-col bg-stone-50 overflow-hidden">
+
       {/* Top nav */}
-      <header className="shrink-0 border-b border-stone-200 bg-white px-4 py-3 flex items-center gap-3">
+      <header className="shrink-0 border-b border-stone-200 bg-white px-4 py-3 flex items-center gap-4">
         <nav className="flex items-center gap-2 text-sm text-stone-400 flex-1 min-w-0">
           <Link
             href={`/courses/${courseId}`}
-            className="hover:text-stone-600 transition-colors truncate max-w-[140px]"
+            className="hover:text-stone-600 transition-colors truncate max-w-[160px] shrink-0"
           >
             {toTitleCase(course.topic)}
           </Link>
-          <span className="shrink-0">→</span>
+          <span className="shrink-0 text-stone-300">›</span>
           <span className="text-stone-600 font-medium truncate">
-            Ch. {chapter.chapter_index + 1} · {chapter.title}
+            {chapter.title}
           </span>
         </nav>
-        <span className="shrink-0 text-xs text-stone-400">
+        <span className="shrink-0 font-[family-name:var(--font-data)] text-xs text-stone-400">
           {chapter.estimated_minutes} min
         </span>
       </header>
 
       {/* Main split */}
       <div className="flex flex-1 overflow-hidden">
-        {/* Content pane */}
+
+        {/* Left: TOC sidebar — xl+ only */}
+        <aside className="hidden xl:flex w-52 shrink-0 flex-col border-r border-stone-200 bg-white overflow-y-auto">
+          <div className="p-4 pt-5">
+            <p className="font-[family-name:var(--font-data)] text-[10px] font-semibold uppercase tracking-widest text-stone-400 mb-3 px-2">
+              {toTitleCase(course.topic)}
+            </p>
+            <nav className="flex flex-col gap-0.5">
+              {allChapters.map((ch, i) => {
+                const isActive = ch.id === chapterId;
+                const isDone = completedIds.has(ch.id);
+                return (
+                  <Link
+                    key={ch.id}
+                    href={`/courses/${courseId}/chapters/${ch.id}`}
+                    className={`flex items-start gap-2.5 px-2 py-2 rounded-lg text-[13px] leading-snug transition-colors ${
+                      isActive
+                        ? "bg-[#FEF3EC] text-orange-700 font-medium"
+                        : "text-stone-500 hover:bg-stone-50 hover:text-stone-800"
+                    }`}
+                  >
+                    <span className="font-[family-name:var(--font-data)] text-[10px] text-stone-400 w-4 shrink-0 text-right mt-0.5">
+                      {i + 1}
+                    </span>
+                    <span className="flex-1 min-w-0">{ch.title}</span>
+                    {isDone && !isActive && (
+                      <span className="text-green-600 text-[10px] shrink-0 mt-0.5">✓</span>
+                    )}
+                  </Link>
+                );
+              })}
+            </nav>
+          </div>
+        </aside>
+
+        {/* Center: reading content */}
         <main className="flex-1 overflow-y-auto">
-          <div className="max-w-2xl mx-auto px-6 py-10">
-            <h1 className="text-3xl font-bold text-stone-900 mb-8" tabIndex={-1}>
+          <div className="max-w-[680px] mx-auto px-6 py-10">
+
+            {/* Chapter overline */}
+            <p className="font-[family-name:var(--font-data)] text-[11px] font-semibold uppercase tracking-widest text-stone-400 mb-3">
+              Chapter {chapter.chapter_index + 1}
+            </p>
+
+            {/* Chapter title */}
+            <h1
+              className="font-display text-[32px] font-semibold text-stone-900 leading-snug mb-8"
+              tabIndex={-1}
+            >
               {chapter.title}
             </h1>
 
@@ -93,32 +149,34 @@ export default async function ChapterPage({ params }: Props) {
               next={next}
             />
 
-            {/* Chapter navigation */}
-            <div className="flex justify-between mt-16 pt-8 border-t border-stone-200 text-sm">
-              {prev ? (
-                <Link
-                  href={`/courses/${courseId}/chapters/${prev.id}`}
-                  className="text-stone-500 hover:text-stone-700 transition-colors"
-                >
-                  ← {prev.title}
-                </Link>
-              ) : (
-                <span />
-              )}
-              {next && (
-                <Link
-                  href={`/courses/${courseId}/chapters/${next.id}`}
-                  className="text-stone-500 hover:text-stone-700 transition-colors"
-                >
-                  {next.title} →
-                </Link>
-              )}
-            </div>
+            {/* Prev / Next chapter navigation */}
+            {(prev || next) && (
+              <div className="flex justify-between mt-16 pt-8 border-t border-stone-200 text-sm gap-4">
+                {prev ? (
+                  <Link
+                    href={`/courses/${courseId}/chapters/${prev.id}`}
+                    className="flex items-start gap-2 text-stone-400 hover:text-stone-700 transition-colors group max-w-[45%]"
+                  >
+                    <span className="shrink-0 mt-0.5">←</span>
+                    <span className="truncate">{prev.title}</span>
+                  </Link>
+                ) : <span />}
+                {next && (
+                  <Link
+                    href={`/courses/${courseId}/chapters/${next.id}`}
+                    className="flex items-start gap-2 text-stone-400 hover:text-stone-700 transition-colors group max-w-[45%] text-right ml-auto"
+                  >
+                    <span className="truncate">{next.title}</span>
+                    <span className="shrink-0 mt-0.5">→</span>
+                  </Link>
+                )}
+              </div>
+            )}
           </div>
         </main>
 
-        {/* Chat sidebar — hidden on mobile, shown on lg+ */}
-        <aside className="hidden lg:flex w-80 xl:w-96 shrink-0 flex-col overflow-hidden">
+        {/* Right: Chat sidebar — lg+ only */}
+        <aside className="hidden lg:flex w-72 xl:w-80 shrink-0 flex-col overflow-hidden border-l border-stone-200">
           <ChapterChat chapterId={chapterId} />
         </aside>
       </div>
