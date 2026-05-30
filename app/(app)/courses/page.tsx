@@ -12,23 +12,6 @@ function getGreeting(): string {
   return "Good evening";
 }
 
-function computeStreak(completedDates: string[]): number {
-  if (completedDates.length === 0) return 0;
-  const today = new Date().toISOString().slice(0, 10);
-  const dayBefore = new Date(Date.now() - 86_400_000).toISOString().slice(0, 10);
-  const activeDays = new Set(completedDates.map((d) => d.slice(0, 10)));
-  if (!activeDays.has(today) && !activeDays.has(dayBefore)) return 0;
-  let streak = 0;
-  let cursor = activeDays.has(today) ? new Date(today) : new Date(dayBefore);
-  while (true) {
-    const dateStr = cursor.toISOString().slice(0, 10);
-    if (!activeDays.has(dateStr)) break;
-    streak++;
-    cursor = new Date(cursor.getTime() - 86_400_000);
-  }
-  return streak;
-}
-
 export default async function CoursesPage() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -68,7 +51,6 @@ export default async function CoursesPage() {
   const today = new Date().toISOString().slice(0, 10);
   const completedChapterIds = new Set(progressRows.map((p) => p.chapter_id));
   const doneToday = progressRows.filter((p) => p.completed_at?.slice(0, 10) === today).length;
-  const streak = computeStreak(progressRows.map((p) => p.completed_at as string));
 
   const chaptersByCourse = chapters.reduce<Record<string, number>>(
     (acc, c) => ({ ...acc, [c.course_id]: (acc[c.course_id] ?? 0) + 1 }),
@@ -97,15 +79,7 @@ export default async function CoursesPage() {
         </h1>
 
         {/* Stat cards */}
-        <div className="grid grid-cols-3 gap-3 mb-8">
-          <div className="rounded-xl bg-white border border-stone-200 px-4 py-4 text-center">
-            <p className="font-[family-name:var(--font-data)] text-[26px] font-medium text-orange-700 leading-none mb-1 tabular-nums">
-              {streak}
-            </p>
-            <p className="font-[family-name:var(--font-data)] text-[10px] uppercase tracking-widest text-stone-400">
-              day streak
-            </p>
-          </div>
+        <div className="grid grid-cols-2 gap-3 mb-8">
           <div className="rounded-xl bg-white border border-stone-200 px-4 py-4 text-center">
             <p className="font-[family-name:var(--font-data)] text-[26px] font-medium text-stone-900 leading-none mb-1 tabular-nums">
               {doneToday}

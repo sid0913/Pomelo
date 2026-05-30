@@ -90,7 +90,7 @@ export function LandingPage() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-white">
+    <div className="flex min-h-screen flex-col bg-stone-50">
       {/* Header */}
       <header className="shrink-0 flex items-center justify-between px-6 py-4 border-b border-stone-100">
         <button

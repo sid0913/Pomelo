@@ -2,6 +2,34 @@
 
 All notable changes to Pomelo are documented here.
 
+## [0.5.1.0] — 2026-05-30
+
+### Security
+- **T11 fixed** — `auth/callback/route.ts`: open redirect guard — `next` params not starting with `/` or starting with `//` now redirect to `/courses` (CWE-601)
+- **T12 fixed** — `reset-password/page.tsx`: replaced `getSession()` (cookie-local) with `getUser()` (server-validated) for auth guard
+
+### Added
+- `ChapterChat`: `sendError` state — inline error displayed below textarea on POST failure or network throw; cleared on next send attempt (T3)
+- `courses/new/page.tsx`: CREATING_VERBS shimmer during course-creation phase — matches loading/exiting verb animation (T4)
+- `courses/new/page.tsx`: Q5 `done===false` else branch — shows inline error instead of silently doing nothing (T14)
+- `AppShell`: skip-to-content link (`sr-only focus:not-sr-only`) and `aria-label="Main navigation"` on sidebar nav (T5, T6)
+- Chapter page: `aria-label="Chapter list"` on TOC nav (T6)
+- `SignOutButton`: inline error state — renders error text below button if `signOut()` returns an error (T15)
+
+### Fixed
+- `LandingPage`: `bg-white` → `bg-stone-50` to match design system background (T1)
+- Chapter page: TOC aside `hidden xl:flex` → `hidden lg:flex` so it appears at lg breakpoint (T10)
+- `courses/new/page.tsx`: Exit button `p-2 -m-2` for 44px touch target (T7)
+- `courses/new/page.tsx`: Back button removed — eliminates stale-history and stale-chips bugs (T13)
+- `courses/page.tsx` / `courses/[id]/page.tsx` / `CourseDashboard.tsx`: streak removed entirely; stat grid converted to 2-col (T8)
+
+### Tests
+- T16: `SignOutButton` — signOut error → inline error rendered
+- T17: `NewCoursePage` — Back button absent; Q5 done:false → error shown
+- T18: `ChapterChat.test.tsx` — POST non-OK, network throw, success clears error (new file)
+- T19: `auth-callback.test.ts` — open redirect blocked, valid next passes through (new file)
+- Total: 112 passing
+
 ## [0.5.0.0] — 2026-05-30
 
 ### Added

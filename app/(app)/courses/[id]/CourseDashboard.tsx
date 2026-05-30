@@ -24,7 +24,6 @@ type Props = {
   chapters: Chapter[];
   completedIds: Set<string>;
   completedToday: number;
-  streak: number;
   isNew: boolean;
 };
 
@@ -33,7 +32,6 @@ export function CourseDashboard({
   chapters,
   completedIds,
   completedToday,
-  streak,
   isNew,
 }: Props) {
   const [headerVisible, setHeaderVisible] = useState(isNew);
@@ -84,14 +82,6 @@ export function CourseDashboard({
             <span className="font-[family-name:var(--font-data)] text-xs">
               {chapters.length} chapters · ~{totalHours < 1 ? `${course.totalMinutes} min` : `${totalHours} hr`}
             </span>
-            {streak > 0 && (
-              <>
-                <span className="text-stone-300">·</span>
-                <span className="font-[family-name:var(--font-data)] text-xs font-semibold text-orange-700">
-                  🔥 {streak} day{streak !== 1 ? "s" : ""} streak
-                </span>
-              </>
-            )}
           </div>
 
           {/* Course progress bar */}

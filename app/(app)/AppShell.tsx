@@ -16,6 +16,13 @@ export function AppShell({ user, activePath, children }: Props) {
 
   return (
     <div className="flex h-screen bg-stone-50">
+      <a
+        href="#main"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-50 focus:px-3 focus:py-2 focus:rounded-lg focus:bg-orange-700 focus:text-white focus:text-sm focus:font-medium"
+      >
+        Skip to content
+      </a>
+
       {/* Sidebar */}
       <aside className="hidden md:flex w-52 shrink-0 flex-col bg-white border-r border-stone-200">
         {/* Logo */}
@@ -27,7 +34,7 @@ export function AppShell({ user, activePath, children }: Props) {
         </div>
 
         {/* Nav */}
-        <nav className="flex-1 p-3 pt-4">
+        <nav aria-label="Main navigation" className="flex-1 p-3 pt-4">
           <Link
             href="/courses"
             className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-[14px] font-medium transition-colors ${
@@ -55,7 +62,7 @@ export function AppShell({ user, activePath, children }: Props) {
       </aside>
 
       {/* Main content */}
-      <main className="flex-1 overflow-y-auto min-w-0">
+      <main id="main" className="flex-1 overflow-y-auto min-w-0">
         {children}
       </main>
     </div>

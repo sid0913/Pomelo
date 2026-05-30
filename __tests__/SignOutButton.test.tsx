@@ -52,6 +52,16 @@ describe("SignOutButton", () => {
     });
   });
 
+  it("shows inline error when signOut returns an error", async () => {
+    mockSignOut.mockResolvedValueOnce({ error: new Error("network failure") });
+    render(<SignOutButton />);
+    fireEvent.click(screen.getByRole("button", { name: /sign out/i }));
+    await waitFor(() => {
+      expect(screen.getByText(/sign-out failed/i)).toBeInTheDocument();
+    });
+    expect(mockPush).not.toHaveBeenCalled();
+  });
+
   it("calls router.push('/') AFTER signOut resolves", async () => {
     // Verify ordering: signOut must finish before redirect
     let signOutResolved = false;

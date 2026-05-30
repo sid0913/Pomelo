@@ -17,6 +17,15 @@ const LOADING_VERBS = [
   "charting your path...",
 ];
 
+const CREATING_VERBS = [
+  "building your course...",
+  "structuring chapters...",
+  "crafting the lessons...",
+  "assembling your path...",
+  "curating content...",
+  "weaving it together...",
+];
+
 const TOTAL_QUESTIONS = 5;
 const MIN_HOLD_MS = 800;
 const EXIT_ANIMATION_MS = 150;
@@ -93,7 +102,7 @@ export default function NewCoursePage() {
     : selectedIndex !== null && (selectedIndex < 4 || freeText.trim().length > 0);
 
   useEffect(() => {
-    if (phase !== "loading") return;
+    if (phase !== "loading" && phase !== "creating") return;
     const id = setInterval(
       () => setVerbIndex((i) => (i + 1) % LOADING_VERBS.length),
       2000
@@ -228,6 +237,9 @@ export default function NewCoursePage() {
           localStorage.removeItem("pomelo_pending_topic");
           setPhase("creating");
           setTimeout(() => router.push(`/courses/${data.courseId}?new=1`), 800);
+        } else {
+          setError("Something went wrong. Please try again.");
+          setPhase("question");
         }
       } catch (err) {
         console.error(err);
@@ -243,26 +255,6 @@ export default function NewCoursePage() {
     localStorage.removeItem("pomelo_pending_topic");
     router.push("/courses");
   }
-
-  const handleBack = useCallback(async () => {
-    if (currentStep === 0) return;
-
-    const prevStepIndex = currentStep - 1;
-    const prevStep = steps[prevStepIndex];
-
-    setPhase("exiting");
-    await new Promise((r) => setTimeout(r, EXIT_ANIMATION_MS));
-
-    setCurrentStep(prevStepIndex);
-    setSelectedIndex(prevStep.selectedIndex);
-    setFreeText(prevStep.freeText);
-    setFocusedOption(prevStep.selectedIndex ?? 0);
-    setChips([]);
-    setChipInput("");
-    setQ5Skipped(false);
-    setError(null);
-    setPhase("question");
-  }, [currentStep, steps]);
 
   const handleAnswerChange = useCallback(
     async (newIndex: number | null, newText: string) => {
@@ -346,7 +338,9 @@ export default function NewCoursePage() {
     return (
       <div className="min-h-screen bg-[#1A1410] flex flex-col items-center justify-center gap-4">
         <div className="w-8 h-8 rounded-full border-2 border-stone-700 border-t-amber-600 animate-spin" />
-        <p className="text-sm font-medium text-stone-500">Creating your personalized course…</p>
+        <span key={verbIndex} className="verb-shimmer text-xl italic">
+          {CREATING_VERBS[verbIndex % CREATING_VERBS.length]}
+        </span>
       </div>
     );
   }
@@ -376,17 +370,7 @@ export default function NewCoursePage() {
 
             {/* Card header: progress + navigation */}
             <div className="px-6 pt-5 pb-0 flex items-center justify-between">
-              {currentStep > 0 ? (
-                <button
-                  onClick={handleBack}
-                  className="text-sm text-stone-400 hover:text-stone-700 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-700 rounded"
-                  aria-label="Go back to previous question"
-                >
-                  ← Back
-                </button>
-              ) : (
-                <span />
-              )}
+              <span />
 
               <div className="flex items-center gap-3">
                 <div
@@ -406,7 +390,7 @@ export default function NewCoursePage() {
                 </div>
                 <button
                   onClick={handleExit}
-                  className="text-xs text-stone-400 hover:text-stone-600 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-700 rounded cursor-pointer"
+                  className="p-2 -m-2 text-xs text-stone-400 hover:text-stone-600 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-700 rounded cursor-pointer"
                   aria-label="Exit qualifying session"
                 >
                   Exit

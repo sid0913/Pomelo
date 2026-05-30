@@ -17,9 +17,9 @@ export default function ResetPasswordPage() {
 
   useEffect(() => {
     createClient()
-      .auth.getSession()
-      .then(({ data: { session } }) => {
-        if (!session) {
+      .auth.getUser()
+      .then(({ data: { user } }) => {
+        if (!user) {
           router.replace("/");
         } else {
           setSessionReady(true);

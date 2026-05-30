@@ -20,6 +20,9 @@ export async function GET(req: NextRequest) {
   }
 
   if (next) {
+    if (!next.startsWith("/") || next.startsWith("//")) {
+      return NextResponse.redirect(`${origin}/courses`);
+    }
     return NextResponse.redirect(`${origin}${next}`);
   }
 
