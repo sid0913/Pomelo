@@ -146,6 +146,7 @@ export default function NewCoursePage() {
       });
 
       if (data.done) {
+        if (!data.courseId) { setError("Something went wrong. Please try again."); setPhase("question"); return; }
         localStorage.removeItem("pomelo_pending_topic");
         setPhase("creating");
         setTimeout(() => router.push(`/courses/${data.courseId}?new=1`), 800);
@@ -223,6 +224,7 @@ export default function NewCoursePage() {
         });
 
         if (data.done) {
+          if (!data.courseId) { setError("Something went wrong. Please try again."); setPhase("question"); return; }
           localStorage.removeItem("pomelo_pending_topic");
           setPhase("creating");
           setTimeout(() => router.push(`/courses/${data.courseId}?new=1`), 800);
