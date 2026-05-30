@@ -1,18 +1,20 @@
 @import "tailwindcss";
 
 @theme {
-  --font-sans: "Plus Jakarta Sans Variable", "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Outfit", system-ui, sans-serif;
+  --font-display: "Fraunces", Georgia, serif;
+  --font-data: "Geist Mono", monospace;
 }
 
 @layer base {
   html { height: 100%; }
   body {
     @apply bg-stone-50 text-stone-900 antialiased min-h-full;
-    font-family: var(--font-sans);
+    font-family: var(--font-body, var(--font-sans));
   }
 }
 
-/* Streaming cursor */
+/* Streaming cursor — amber = AI presence */
 @keyframes blink {
   0%, 100% { opacity: 1; }
   50%       { opacity: 0; }
@@ -33,7 +35,7 @@
   animation: slideIn 0.3s ease-out both;
 }
 
-/* Verb shimmer (qualifying chat loading state) */
+/* Verb shimmer — amber = AI presence */
 @keyframes verbShimmer {
   0%   { background-position: -200% center; }
   100% { background-position:  200% center; }

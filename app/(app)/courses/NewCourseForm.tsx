@@ -1,11 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 
 export function NewCourseForm() {
   const [topic, setTopic] = useState("");
   const router = useRouter();
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    inputRef.current?.focus();
+  }, []);
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -17,20 +22,20 @@ export function NewCourseForm() {
   return (
     <form onSubmit={handleSubmit} className="flex gap-2">
       <input
+        ref={inputRef}
         type="text"
         value={topic}
         onChange={(e) => setTopic(e.target.value)}
         placeholder="What do you want to learn next?"
-        className="flex-1 rounded-lg border border-stone-200 bg-white px-4 py-2.5 text-stone-900 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-amber-500 text-sm"
+        className="flex-1 rounded-lg border border-stone-200 bg-white px-4 py-3 text-stone-900 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-orange-700 text-[15px]"
         required
         minLength={2}
         maxLength={200}
-        autoFocus
       />
       <button
         type="submit"
         disabled={!topic.trim()}
-        className="shrink-0 rounded-lg bg-amber-600 px-4 py-2.5 text-sm text-white font-semibold hover:bg-amber-700 transition-colors disabled:opacity-40"
+        className="shrink-0 rounded-lg bg-orange-700 px-5 py-3 text-sm text-white font-semibold hover:bg-orange-800 transition-colors disabled:opacity-40 cursor-pointer disabled:cursor-not-allowed"
       >
         New course →
       </button>

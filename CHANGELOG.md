@@ -2,6 +2,32 @@
 
 All notable changes to Pomelo are documented here.
 
+## [0.5.0.0] — 2026-05-30
+
+### Added
+- **Design system — Scholarly Warmth** — Fraunces (display) + Outfit (body) + Geist Mono (data); brand `#C2410C` orange; `#FAFAF9` background throughout.
+- **New landing page flow** — topic → email → inline OTP verification (code-based, no magic link redirect); returning users tap "Sign in" in the header for email+password signin.
+- **Forgot password / reset password pages** — `/forgot-password` sends a reset email; `/reset-password` lets users set a new password.
+- **AppShell sidebar** — persistent sidebar nav on md+ screens (`hidden md:flex`); contains logo, My Courses link, and sign-out button. Bottom tab bar deferred to `feat/mobile-nav`.
+- **Middleware** — Supabase SSR cookie refresh on every request; auth guard redirects unauthenticated users from `/courses/*` to homepage.
+- **Qualifying wizard redesign** — full-screen dark canvas (`#1A1410`) with centered warm card (`#FFFDF5`); animated option chips; rotating verb shimmer on loading/exiting phases.
+- **Course dashboard redesign** — warm chapter list cards with completion rings; per-chapter estimated minutes; empty-state warm loader.
+- **Chapter page redesign** — warm typography, orange-700 accent, inline chapter chat panel on lg+; TOC aside at lg+.
+- **Course index redesign** — italic course name headings; warm card grid layout; 2-col stat grid (streak removed).
+- **Pomelo logo** — SVG + PNG assets added; used in AppShell header and landing page.
+- **courseId null guard** — qualifying wizard now handles malformed API responses that return a missing `courseId` with an inline error instead of navigating to `/courses/undefined`.
+
+### Tests
+- Rewrote `LandingPage` test suite (11 tests) to match new multi-step auth flow.
+- Fixed `NewCoursePage` exit-button tests (3 tests) — mock now resolves a question response so the component reaches the "question" phase where the Exit button lives.
+- Fixed `OtherRow` placeholder text assertion to match new design copy.
+- Total: 102 passing.
+
+### Deferred
+- Security: open redirect in `auth/callback/route.ts` (T11) — tracked in TODOS.md
+- Security: `getSession()` → `getUser()` in `reset-password/page.tsx` (T12) — tracked in TODOS.md
+- Mobile nav bottom tab bar (T30/feat/mobile-nav), chapter chat floating button, page cross-fades
+
 ## [0.4.0.0] — 2026-05-28
 
 ### Added

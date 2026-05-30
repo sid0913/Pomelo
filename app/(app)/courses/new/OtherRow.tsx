@@ -44,24 +44,28 @@ export function OtherRow({
         }
       }}
       className={`
-        option-enter flex items-center gap-4 px-6 py-5 cursor-pointer select-none
+        option-enter flex items-center gap-4 px-5 py-4 cursor-pointer select-none
         border transition-colors duration-100 outline-none rounded-b-lg
         ${selected
-          ? "border-amber-600 bg-amber-50"
-          : "border-stone-200 bg-white hover:border-amber-300 hover:bg-amber-50/50 border-t-0"
+          ? "border-orange-700 bg-[#FEF3EC]"
+          : "border-stone-200 bg-[#FFFDF5] hover:border-orange-200 hover:bg-[#FEF3EC]/40 border-t-0"
         }
-        focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-0
+        focus-visible:ring-2 focus-visible:ring-orange-700 focus-visible:ring-offset-0
       `}
       style={{ animationDelay: `${staggerIndex * 80}ms` }}
     >
       <span
         className={`
-          flex-shrink-0 w-7 h-7 rounded-md flex items-center justify-center
-          text-xs font-bold font-mono transition-colors duration-100
-          ${selected ? "bg-amber-600 text-white" : "bg-stone-100 text-stone-500"}
+          flex-shrink-0 w-7 h-7 rounded-md flex items-center justify-center border
+          font-[family-name:var(--font-data)] text-xs font-bold transition-colors duration-100
+          border-dashed
+          ${selected
+            ? "border-orange-700 text-orange-700 bg-[#FEF3EC]"
+            : "border-stone-300 text-stone-400 bg-transparent"
+          }
         `}
       >
-        E
+        ↩
       </span>
 
       {selected ? (
@@ -82,7 +86,7 @@ export function OtherRow({
           className="flex-1 bg-transparent text-sm text-stone-800 placeholder:text-stone-400 outline-none min-w-0"
         />
       ) : (
-        <span className="text-sm text-stone-500 italic">Type your own answer…</span>
+        <span className="font-display text-sm italic text-[#A8A29E]">Type your own…</span>
       )}
     </div>
   );

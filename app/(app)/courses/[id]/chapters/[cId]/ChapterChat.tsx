@@ -151,7 +151,7 @@ export function ChapterChat({ chapterId }: Props) {
           </span>
           <button
             onClick={() => setShowNewThread((v) => !v)}
-            className="text-xs text-amber-600 hover:underline"
+            className="text-xs text-orange-700 hover:underline"
           >
             + new thread
           </button>
@@ -165,12 +165,12 @@ export function ChapterChat({ chapterId }: Props) {
               onChange={(e) => setNewThreadName(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && void createThread()}
               placeholder="Thread name"
-              className="flex-1 text-xs border border-stone-200 rounded px-2 py-1 outline-none focus:border-amber-400"
+              className="flex-1 text-xs border border-stone-200 rounded px-2 py-1 outline-none focus:border-orange-700"
               autoFocus
             />
             <button
               onClick={createThread}
-              className="text-xs bg-amber-600 text-white rounded px-2 py-1 hover:bg-amber-700"
+              className="text-xs bg-orange-700 text-white rounded px-2 py-1 hover:bg-orange-800"
             >
               Create
             </button>
@@ -186,7 +186,7 @@ export function ChapterChat({ chapterId }: Props) {
                 onClick={() => switchThread(t)}
                 className={`shrink-0 text-xs px-2 py-1 rounded-full transition-colors ${
                   t.id === activeThreadId
-                    ? "bg-amber-100 text-amber-700 font-medium"
+                    ? "bg-[#FEF3EC] text-orange-700 font-medium"
                     : "text-stone-400 hover:text-stone-600"
                 }`}
               >
@@ -219,7 +219,7 @@ export function ChapterChat({ chapterId }: Props) {
                       setInput(q);
                       textareaRef.current?.focus();
                     }}
-                    className="text-xs text-left text-stone-400 hover:text-amber-600 transition-colors"
+                    className="text-xs text-left text-stone-400 hover:text-orange-700 transition-colors"
                   >
                     &ldquo;{q}&rdquo;
                   </button>
@@ -236,7 +236,7 @@ export function ChapterChat({ chapterId }: Props) {
               <div
                 className={`max-w-[85%] rounded-2xl px-3 py-2 text-sm leading-relaxed whitespace-pre-wrap ${
                   m.role === "user"
-                    ? "bg-amber-600 text-white rounded-br-sm"
+                    ? "bg-orange-700 text-white rounded-br-sm"
                     : "bg-stone-100 text-stone-800 rounded-bl-sm"
                 }`}
               >
@@ -271,14 +271,14 @@ export function ChapterChat({ chapterId }: Props) {
             onKeyDown={handleKeyDown}
             placeholder="Ask about this chapter…"
             rows={1}
-            className="flex-1 resize-none rounded-xl border border-stone-200 px-3 py-2 text-sm outline-none focus:border-amber-400 transition-colors leading-relaxed max-h-32 overflow-y-auto"
+            className="flex-1 resize-none rounded-xl border border-stone-200 px-3 py-2 text-sm outline-none focus:border-orange-700 transition-colors leading-relaxed max-h-32 overflow-y-auto"
             style={{ fieldSizing: "content" } as React.CSSProperties}
             disabled={loading}
           />
           <button
             onClick={send}
             disabled={!input.trim() || loading}
-            className="shrink-0 w-8 h-8 rounded-full bg-amber-600 text-white flex items-center justify-center hover:bg-amber-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            className="shrink-0 w-8 h-8 rounded-full bg-orange-700 text-white flex items-center justify-center hover:bg-orange-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
             aria-label="Send"
           >
             <svg

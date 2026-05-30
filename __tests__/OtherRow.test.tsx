@@ -20,7 +20,7 @@ describe("OtherRow", () => {
   // ── Unselected state ───────────────────────────────────────
   it("renders italic placeholder text when not selected", () => {
     render(<OtherRow {...makeProps({ selected: false })} />);
-    expect(screen.getByText("Type your own answer…")).toBeInTheDocument();
+    expect(screen.getByText("Type your own…")).toBeInTheDocument();
   });
 
   it("shows no text input when not selected", () => {

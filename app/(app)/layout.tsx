@@ -1,6 +1,5 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { SignOutButton } from "./SignOutButton";
 
 export default async function AppLayout({
   children,
@@ -14,12 +13,5 @@ export default async function AppLayout({
 
   if (!user) redirect("/");
 
-  return (
-    <>
-      <div className="fixed top-4 right-4 z-50">
-        <SignOutButton />
-      </div>
-      {children}
-    </>
-  );
+  return <>{children}</>;
 }

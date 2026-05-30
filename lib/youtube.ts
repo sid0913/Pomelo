@@ -21,7 +21,7 @@ export async function searchYouTube(
     url.searchParams.set("safeSearch", "strict");
     url.searchParams.set("key", key);
 
-    const res = await fetch(url.toString(), { next: { revalidate: 86400 } });
+    const res = await fetch(url.toString(), { cache: "no-store" });
     if (!res.ok) return [];
 
     const data = await res.json();

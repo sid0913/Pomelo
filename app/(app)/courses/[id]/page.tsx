@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { CourseDashboard } from "./CourseDashboard";
+import { AppShell } from "@/app/(app)/AppShell";
 
 type Props = { params: Promise<{ id: string }>; searchParams: Promise<{ new?: string }> };
 
@@ -86,13 +87,15 @@ export default async function CoursePage({ params, searchParams }: Props) {
   );
 
   return (
-    <CourseDashboard
-      course={{ ...course, totalMinutes }}
-      chapters={chapters ?? []}
-      completedIds={completedIds}
-      completedToday={completedToday}
-      streak={streak}
-      isNew={isNew === "1"}
-    />
+    <AppShell user={user} activePath="/courses">
+      <CourseDashboard
+        course={{ ...course, totalMinutes }}
+        chapters={chapters ?? []}
+        completedIds={completedIds}
+        completedToday={completedToday}
+        streak={streak}
+        isNew={isNew === "1"}
+      />
+    </AppShell>
   );
 }
