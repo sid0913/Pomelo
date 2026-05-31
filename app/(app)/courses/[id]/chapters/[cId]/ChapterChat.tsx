@@ -13,6 +13,7 @@ export function ChapterChat({ chapterId }: Props) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [sendError, setSendError] = useState<string | null>(null);
   const [loadingThreads, setLoadingThreads] = useState(true);
   const [newThreadName, setNewThreadName] = useState("");
   const [showNewThread, setShowNewThread] = useState(false);
@@ -57,6 +58,7 @@ export function ChapterChat({ chapterId }: Props) {
 
     setInput("");
     setLoading(true);
+    setSendError(null);
 
     const optimisticMsg: Message = {
       role: "user",
@@ -85,6 +87,7 @@ export function ChapterChat({ chapterId }: Props) {
 
       if (!res.ok) {
         setMessages((prev) => prev.slice(0, -1));
+        setSendError("Couldn't send message. Please try again.");
         return;
       }
 
@@ -108,6 +111,7 @@ export function ChapterChat({ chapterId }: Props) {
       });
     } catch {
       setMessages((prev) => prev.slice(0, -1));
+      setSendError("Network error. Please try again.");
     } finally {
       setLoading(false);
       textareaRef.current?.focus();
@@ -296,6 +300,9 @@ export function ChapterChat({ chapterId }: Props) {
             </svg>
           </button>
         </div>
+        {sendError && (
+          <p className="text-xs text-red-500 mt-1.5">{sendError}</p>
+        )}
         <p className="text-[10px] text-stone-300 mt-1.5 text-center">
           Enter to send · Shift+Enter for newline
         </p>

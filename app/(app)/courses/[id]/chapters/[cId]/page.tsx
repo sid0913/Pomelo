@@ -88,13 +88,13 @@ export default async function ChapterPage({ params }: Props) {
       {/* Main split */}
       <div className="flex flex-1 overflow-hidden">
 
-        {/* Left: TOC sidebar — xl+ only */}
-        <aside className="hidden xl:flex w-52 shrink-0 flex-col border-r border-stone-200 bg-white overflow-y-auto">
+        {/* Left: TOC sidebar — lg+ only */}
+        <aside className="hidden lg:flex w-52 shrink-0 flex-col border-r border-stone-200 bg-white overflow-y-auto">
           <div className="p-4 pt-5">
             <p className="font-[family-name:var(--font-data)] text-[10px] font-semibold uppercase tracking-widest text-stone-400 mb-3 px-2">
               {toTitleCase(course.topic)}
             </p>
-            <nav className="flex flex-col gap-0.5">
+            <nav aria-label="Chapter list" className="flex flex-col gap-0.5">
               {allChapters.map((ch, i) => {
                 const isActive = ch.id === chapterId;
                 const isDone = completedIds.has(ch.id);

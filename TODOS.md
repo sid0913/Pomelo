@@ -40,31 +40,31 @@ Plan file: `~/.gstack/projects/pomelo/ananth-feat-design-overhaul-eng-review-202
 
 ### P1 — Critical path
 
-- [ ] **T1** `app/LandingPage.tsx:93` — `bg-white` → `bg-stone-50`
-- [ ] **T2** `CourseDashboard.tsx` empty state warm loader — DONE ✓
-- [ ] **T3** `ChapterChat.tsx:86-89,109-110` — add `sendError` state; display inline below textarea on failure; clear on retry
-- [ ] **T4** `courses/new/page.tsx` creating state — add rotating verb shimmer to the "creating" phase (currently only on loading/exiting phases)
-- [ ] **T11** `app/auth/callback/route.ts:22-24` — **SECURITY**: validate `next` param: `if (!next.startsWith('/') || next.startsWith('//')) next = ''` (open redirect CWE-601)
-- [ ] **T14** `courses/new/page.tsx:225-229` — add `else { setError("Something went wrong. Please try again."); setPhase("question"); }` to Q5 `done===false` case
+- [x] **T1** `app/LandingPage.tsx:93` — `bg-white` → `bg-stone-50` ✓
+- [x] **T2** `CourseDashboard.tsx` empty state warm loader — DONE ✓
+- [x] **T3** `ChapterChat.tsx` — `sendError` state; inline error below textarea on failure; cleared on retry ✓
+- [x] **T4** `courses/new/page.tsx` creating state — rotating verb shimmer added (CREATING_VERBS) ✓
+- [x] **T11** `app/auth/callback/route.ts` — **SECURITY FIXED**: open redirect guard ✓
+- [x] **T14** `courses/new/page.tsx` — Q5 `done===false` else branch added ✓
 
 ### P2 — Polish and hardening
 
-- [ ] **T5** `AppShell.tsx` — add skip nav link: `<a href="#main" className="sr-only focus:not-sr-only ...">Skip to content</a>`
-- [ ] **T6** `AppShell.tsx` + chapter page — add `aria-label="Main navigation"` to sidebar nav; `aria-label="Chapter list"` to TOC nav
-- [ ] **T7** `courses/new/page.tsx` — add `p-2 -m-2` to Exit button className (44px touch target)
-- [ ] **T8** `courses/page.tsx` + `courses/[id]/page.tsx` + `CourseDashboard.tsx` — remove `computeStreak()`, remove `allProgress` DB query, remove `streak` prop, convert stat grid to 2-col
-- [ ] **T9** `courses/page.tsx:156` — add `italic` to course name h2 className — DONE ✓
-- [ ] **T10** `courses/[id]/chapters/[cId]/page.tsx:92` — `hidden xl:flex` → `hidden lg:flex` on TOC aside (currently only chat aside was changed)
-- [ ] **T12** `app/(auth)/reset-password/page.tsx:19-28` — **SECURITY**: replace `getSession()` with `getUser()`: `const { data: { user } } = await createClient().auth.getUser(); if (!user) router.replace("/");`
-- [ ] **T13** `courses/new/page.tsx` — remove `handleBack` function + Back button JSX (lines ~377-388); eliminates stale-history and stale-chips bugs
-- [ ] **T15** `SignOutButton.tsx` — add `useState<string|null>(null)` for error; destructure `{ error }` from `signOut()`; render error text below button
+- [x] **T5** `AppShell.tsx` — skip nav link added ✓
+- [x] **T6** `AppShell.tsx` + chapter page — `aria-label="Main navigation"` + `aria-label="Chapter list"` ✓
+- [x] **T7** `courses/new/page.tsx` — `p-2 -m-2` on Exit button ✓
+- [x] **T8** `courses/page.tsx` + `courses/[id]/page.tsx` + `CourseDashboard.tsx` — streak removed; stat grid 2-col ✓
+- [x] **T9** `courses/page.tsx:156` — `italic` on course name h2 — DONE ✓
+- [x] **T10** `courses/[id]/chapters/[cId]/page.tsx` — TOC aside `hidden xl:flex` → `hidden lg:flex` ✓
+- [x] **T12** `app/(auth)/reset-password/page.tsx` — **SECURITY FIXED**: `getSession()` → `getUser()` ✓
+- [x] **T13** `courses/new/page.tsx` — `handleBack` + Back button removed ✓
+- [x] **T15** `SignOutButton.tsx` — error state added; inline error rendered on failure ✓
 
 ### Tests
 
-- [ ] **T16** `__tests__/SignOutButton.test.tsx` — add test: `signOut` returns `{ error }` → inline error text rendered
-- [ ] **T17** `__tests__/NewCoursePage.test.tsx` — add test: Back button not in DOM; add test: mock API returns `{ done: false }` at Q5 → error shown + phase "question"
-- [ ] **T18** Create `__tests__/ChapterChat.test.tsx` — POST non-OK → `sendError` shown; network throw → `sendError` shown; subsequent success clears error
-- [ ] **T19** Create `__tests__/auth-callback.test.ts` — `next="//evil.com"` → redirects to `/courses`; `next="/reset-password"` → passes through; `next=""` → redirects to `/courses`
+- [x] **T16** `__tests__/SignOutButton.test.tsx` — signOut error → inline error text ✓
+- [x] **T17** `__tests__/NewCoursePage.test.tsx` — Back button not in DOM; Q5 done:false → error shown ✓
+- [x] **T18** `__tests__/ChapterChat.test.tsx` — POST non-OK; network throw; success clears error ✓
+- [x] **T19** `__tests__/auth-callback.test.ts` — open redirect blocked; valid /next passes through ✓
 
 ## Visual learning (deferred from /autoplan visual-learning review)
 

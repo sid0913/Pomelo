@@ -77,3 +77,64 @@ describe("NewCoursePage — Exit button", () => {
     expect(mockPush).toHaveBeenCalledTimes(1);
   });
 });
+
+describe("NewCoursePage — T17: Back button removed and Q5 done:false error", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    localStorageMock.setItem("pomelo_pending_topic", "machine learning");
+  });
+
+  afterEach(() => {
+    localStorageMock.clear();
+    vi.restoreAllMocks();
+  });
+
+  it("Back button is never rendered (T13 removed)", async () => {
+    questionFetch();
+    render(<NewCoursePage />);
+    await screen.findByRole("button", { name: /exit qualifying session/i });
+    expect(
+      screen.queryByRole("button", { name: /go back to previous question/i })
+    ).not.toBeInTheDocument();
+  });
+
+  it("shows error when Q5 submit returns done:false (T14)", async () => {
+    // Real timers: MIN_HOLD_MS=800 × 6 fetches + EXIT_ANIMATION_MS=150 × 4 steps ≈ 5.4s
+    let callCount = 0;
+    vi.spyOn(global, "fetch").mockImplementation(async () => {
+      callCount++;
+      if (callCount <= 5) {
+        return {
+          ok: true,
+          json: async () => ({
+            done: false,
+            sessionId: "session-t14",
+            question: `Question ${callCount}?`,
+            options: ["Option A", "Option B", "Option C", "Option D"],
+          }),
+        } as Response;
+      }
+      // Q5 submit → done:false triggers the T14 else branch
+      return { ok: true, json: async () => ({ done: false }) } as Response;
+    });
+
+    render(<NewCoursePage />);
+
+    // Click through Q1–Q4: findAllByRole waits up to 3s for each question to load
+    for (let q = 0; q < 4; q++) {
+      const radios = await screen.findAllByRole("radio", {}, { timeout: 3000 });
+      fireEvent.click(radios[0]);
+      fireEvent.click(screen.getByRole("button", { name: /continue →/i }));
+    }
+
+    // Q5 shows chip input instead of radio options
+    await screen.findByPlaceholderText("Add topic…", {}, { timeout: 3000 });
+    fireEvent.click(screen.getByText(/skip — no specific topics/i));
+    fireEvent.click(screen.getByRole("button", { name: /finish →/i }));
+
+    await waitFor(
+      () => expect(screen.getByText(/something went wrong/i)).toBeInTheDocument(),
+      { timeout: 3000 }
+    );
+  }, 30000);
+});

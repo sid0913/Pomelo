@@ -222,13 +222,6 @@ export async function POST(req: NextRequest) {
         .from("qualifying_sessions")
         .update({ status: "complete", updated_at: new Date().toISOString() })
         .eq("id", session.id),
-      serviceClient.from("habit_reminders").insert({
-        user_id: user.id,
-        course_id: course.id,
-        timezone: validTimezone,
-        utc_offset_hours: Math.round(utcOffsetHours),
-        is_active: true,
-      }),
     ]);
 
     return NextResponse.json({ done: true, courseId: course.id });
