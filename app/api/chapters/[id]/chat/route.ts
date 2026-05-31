@@ -141,7 +141,7 @@ export async function POST(req: NextRequest, { params }: Params) {
   const CHAT_HISTORY_CAP = 100;
   const finalMessages: Message[] = [
     ...updatedMessages,
-    { role: "assistant", content: assistantText, timestamp: new Date().toISOString() },
+    { role: "assistant" as const, content: assistantText, timestamp: new Date().toISOString() },
   ].slice(-CHAT_HISTORY_CAP);
 
   await serviceClient
